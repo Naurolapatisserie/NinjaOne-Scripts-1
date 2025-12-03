@@ -1,42 +1,42 @@
-# ✋ NinjaOne Custom Field Notification Script
+# ✋ Script de Notification de Champ Personnalisé NinjaOne
 
-This PowerShell script sets a custom field in NinjaOne with an emoji (`✋`) to indicate a status or notify users. After a brief delay, the field is automatically cleared. This is useful for visual indicators or time-sensitive flags in NinjaOne. Adminstrators can also create a condition that monitors for the presence of the hand emoji to streamline the ticket submission/"call for help" process.
-
----
-
-## 🧰 Requirements
-
-- **Script form variable** `customFieldName` must be set, containing the name of the custom field to target. Alternately the name of the custom field can be hardcoded into the script.
+Ce script PowerShell définit un champ personnalisé dans NinjaOne avec un emoji (`✋`) pour indiquer un statut ou notifier les utilisateurs. Après un bref délai, le champ est automatiquement effacé. C'est utile pour les indicateurs visuels ou les drapeaux sensibles au temps dans NinjaOne. Les administrateurs peuvent également créer une condition qui surveille la présence de l'emoji main pour simplifier le processus de soumission de ticket/"appel à l'aide".
 
 ---
 
-## ⚙️ What It Does
+## 🧰 Prérequis
 
-1. Verifies that the `Ninja-Property-Set` cmdlet exists.
-2. Sets the specified custom field to `✋`.
-3. Waits for **3 minutes**.
-4. Clears the custom field.
+- La **variable de formulaire de script** `customFieldName` doit être définie, contenant le nom du champ personnalisé à cibler. Alternativement, le nom du champ personnalisé peut être codé en dur dans le script.
 
 ---
 
-## 🛠️ Usage
+## ⚙️ Ce que Fait le Script
 
-### 1. Set the Required Environment Variable
+1. Vérifie que la cmdlet `Ninja-Property-Set` existe.
+2. Définit le champ personnalisé spécifié à `✋`.
+3. Attend **3 minutes**.
+4. Efface le champ personnalisé.
 
-Before running the script, define the custom field name as an environment variable:
+---
+
+## 🛠️ Utilisation
+
+### 1. Définir la Variable d'Environnement Requise
+
+Avant d'exécuter le script, définissez le nom du champ personnalisé comme variable d'environnement :
 
 ```powershell
-$env:customFieldName = "YourCustomFieldName"
+$env:customFieldName = "VotreNomDeChampPersonnalisé"
 ```
 ---
 
-## 🧼 Cleanup
+## 🧼 Nettoyage
 
-The script automatically clears the custom field after the delay, ensuring temporary notifications don’t persist.
+Le script efface automatiquement le champ personnalisé après le délai, s'assurant que les notifications temporaires ne persistent pas.
 
 ---
 
 ## 📌 Notes
 
-- You can change the emoji or message by modifying the `$Message` variable.
-- You can adjust the delay by changing the `Start-Sleep -Seconds` value (currently set to 180 seconds = 3 minutes).
+- Vous pouvez changer l'emoji ou le message en modifiant la variable `$Message`.
+- Vous pouvez ajuster le délai en changeant la valeur `Start-Sleep -Seconds` (actuellement définie à 180 secondes = 3 minutes).

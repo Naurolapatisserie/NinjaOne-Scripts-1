@@ -6,13 +6,13 @@ if ($env:configuration -notlike "null") {
     $Setting = $env:configuration 
 }
 
-# Retrieve security settings
+# Récupérer les paramètres de sécurité
 $firewallValue = Ninja-Property-Docs-Get 'Device Configuration' 'Device Configuration' enforceFirewallEnablement
 $disablePowershell = Ninja-Property-Docs-Get 'Device Configuration' 'Device Configuration' disablePowershell20
 $smbV1 = Ninja-Property-Docs-Get 'Device Configuration' 'Device Configuration' disableSmbV1
 $inactiveusers = Ninja-Property-Docs-Get 'Device Configuration' 'Device Configuration' inactiveUsersAlert
 
-# Determine which variable to output
+# Déterminer quelle variable afficher
 switch ($Setting.ToLower()) {
     "firewall" { Write-Output "Firewall Enforcement: $firewallValue" }
     "powershell" { Write-Output "PowerShell v2 Disabled: $disablePowershell" }

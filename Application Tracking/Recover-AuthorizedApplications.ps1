@@ -1,72 +1,72 @@
 <#
 .SYNOPSIS
-    Backs up or restores authorized software lists for organizations and devices in NinjaOne.
+    Sauvegarde ou restaure les listes de logiciels autorisés pour les organisations et appareils dans NinjaOne.
 
 .DESCRIPTION
-    This script provides two primary actions: 
-    1. **Backup**: Retrieves and saves the authorized software lists for organizations and devices to a JSON file.
-    2. **Restore**: Restores authorized software lists for organizations or devices from a backup JSON file.
+    Ce script fournit deux actions principales :
+    1. **Backup** : Récupère et enregistre les listes de logiciels autorisés pour les organisations et appareils dans un fichier JSON.
+    2. **Restore** : Restaure les listes de logiciels autorisés pour les organisations ou appareils depuis un fichier de sauvegarde JSON.
 
-    The script supports filtering targets for restoration (organizations or devices) and selecting the most recent backup file automatically.
+    Le script prend en charge le filtrage des cibles pour la restauration (organisations ou appareils) et la sélection automatique du fichier de sauvegarde le plus récent.
 
 .PARAMETER Action
-    [string] Specifies the action to perform.
-    Valid values: "Backup" or "Restore".
+    [string] Spécifie l'action à effectuer.
+    Valeurs valides : "Backup" ou "Restore".
 
 .PARAMETER BackupFile
-    [string] The path to the backup JSON file to be used for restoration. 
-    Required when performing a Restore action.
+    [string] Le chemin vers le fichier JSON de sauvegarde à utiliser pour la restauration.
+    Requis lors d'une action de restauration.
 
 .PARAMETER BackupDirectory
-    [string] The directory containing backup files. 
-    If no BackupFile is specified, the script will automatically select the most recent backup file.
+    [string] Le répertoire contenant les fichiers de sauvegarde.
+    Si aucun BackupFile n'est spécifié, le script sélectionnera automatiquement le fichier de sauvegarde le plus récent.
 
 .PARAMETER TargetType
-    [string] The type of targets to restore.
-    Valid values: "All", "Organizations", or "Devices".
+    [string] Le type de cibles à restaurer.
+    Valeurs valides : "All", "Organizations" ou "Devices".
 
 .PARAMETER RestoreTargets
-    [string] A comma-separated list of specific targets to restore (organization names or device names). 
-    If TargetType is "All", this parameter is ignored.
+    [string] Une liste séparée par virgules des cibles spécifiques à restaurer (noms d'organisations ou d'appareils).
+    Si TargetType est "All", ce paramètre est ignoré.
 
 .EXAMPLE
-    # Perform a backup of all authorized software lists
+    # Effectuer une sauvegarde de toutes les listes de logiciels autorisés
     .\ScriptName.ps1 -Action Backup
 
 .EXAMPLE
-    # Restore authorized software lists for all organizations from the most recent backup
+    # Restaurer les listes de logiciels autorisés pour toutes les organisations depuis la sauvegarde la plus récente
     .\ScriptName.ps1 -Action Restore -BackupDirectory "C:\Backups" -TargetType Organizations
 
 .EXAMPLE
-    # Restore authorized software for specific devices from a specific backup file
+    # Restaurer les logiciels autorisés pour des appareils spécifiques depuis un fichier de sauvegarde spécifique
     .\ScriptName.ps1 -Action Restore -BackupFile "C:\Backups\Backup_20240923_120000.json" `
                      -TargetType Devices -RestoreTargets "Device1,Device2"
 
 .EXAMPLE
-    # Automatically find the most recent backup and restore software lists for all devices
+    # Trouver automatiquement la sauvegarde la plus récente et restaurer les listes de logiciels pour tous les appareils
     .\ScriptName.ps1 -Action Restore -BackupDirectory "C:\Backups" -TargetType Devices
 
 .INPUTS
-    Environment variables:
-        - $env:action          : Specifies the action ("Backup" or "Restore").
-        - $env:backupFile      : Path to the backup file for restoration.
+    Variables d'environnement :
+        - $env:action          : Spécifie l'action ("Backup" ou "Restore").
+        - $env:backupFile      : Chemin vers le fichier de sauvegarde pour la restauration.
 
 .OUTPUTS
-    - For **Backup**: A JSON file containing authorized software lists is saved to the specified or default location.
-    - For **Restore**: Updates authorized software lists in NinjaOne and outputs success/failure messages.
+    - Pour **Backup** : Un fichier JSON contenant les listes de logiciels autorisés est enregistré à l'emplacement spécifié ou par défaut.
+    - Pour **Restore** : Met à jour les listes de logiciels autorisés dans NinjaOne et affiche les messages de succès/échec.
 
 .NOTES
-    - PowerShell Version: 5.1 or later.
-    - The script requires API credentials for NinjaOne.
+    - Version PowerShell : 5.1 ou ultérieure.
+    - Le script nécessite des identifiants API pour NinjaOne.
 
 #>
 
 param(
-    # Action Parameter to Determine Backup or Restore
+    # Paramètre Action pour déterminer Sauvegarde ou Restauration
     [Parameter(Mandatory = $false, HelpMessage = "Specify the action to perform: Backup or Restore.")]
     [string]$Action,
 
-    # Restore-Specific Parameters
+    # Paramètres spécifiques à la restauration
     [Parameter(Mandatory = $false, HelpMessage = "Path to the backup JSON file for restoration.")]
     [string]$BackupFile,
 
@@ -91,7 +91,7 @@ try {
     $NinjaOneClientId = Ninja-Property-Get ninjaoneClientId
     $NinjaOneClientSecret = Ninja-Property-Get ninjaoneClientSecret
 
-    # Authentication
+    # Authentification
     $authBody = @{
         grant_type    = "client_credentials"
         client_id     = $NinjaOneClientId
@@ -110,7 +110,7 @@ catch {
 try {
     $authResponse = Invoke-RestMethod -Uri "https://$NinjaOneInstance/oauth/token" -Method POST -Headers $authHeaders -Body $authBody
     $accessToken = $authResponse.access_token
-    # Headers for API requests
+    # En-têtes pour les requêtes API
     $headers = @{
         accept        = 'application/json'
         Authorization = "Bearer $accessToken"
@@ -120,7 +120,7 @@ try {
     exit 1
 }
 
-# Fetch organizations from NinjaOne
+# Récupérer les organisations depuis NinjaOne
 $organizationsUrl = "https://$NinjaOneInstance/v2/organizations"
 try {
     $organizations = Invoke-RestMethod -Uri $organizationsUrl -Method GET -Headers $headers
@@ -129,7 +129,7 @@ try {
     exit 1
 }
 
-# Fetch organizations from NinjaOne
+# Récupérer les appareils depuis NinjaOne
 $devicesUrl = "https://$NinjaOneInstance/v2/devices?df=class%20in%20(WINDOWS_WORKSTATION,%20WINDOWS_SERVER)"
 try {
     $devices = Invoke-RestMethod -Uri $devicesUrl -Method GET -Headers $headers
@@ -150,7 +150,7 @@ function Backup-AuthorizedSoftware {
         Devices       = @()
     }
 
-    # Backup Organizations
+    # Sauvegarder les organisations
     foreach ($org in $organizations) {
         $orgId = $org.id
         $orgName = $org.name
@@ -170,7 +170,7 @@ function Backup-AuthorizedSoftware {
         }
     }
 
-    # Backup Devices
+    # Sauvegarder les appareils
     foreach ($dev in $devices) {
         $deviceId = $dev.id
         $deviceName = $dev.systemName
@@ -183,7 +183,7 @@ function Backup-AuthorizedSoftware {
             $deviceSoftwareList = $null
         }
 
-        # Only add the device to backup if a value is present
+        # Ajouter l'appareil à la sauvegarde uniquement si une valeur est présente
         if ([string]::IsNullOrWhiteSpace($deviceSoftwareList)) {
             Write-Host "Skipping backup for device '$deviceName' as no software list is set." -ForegroundColor Yellow
             continue
@@ -197,7 +197,7 @@ function Backup-AuthorizedSoftware {
     }
 
 
-    # Save backup to file
+    # Enregistrer la sauvegarde dans un fichier
     $backupJson = $backupData | ConvertTo-Json -Depth 10
     $backupJson | Out-File $OutputFile -Encoding UTF8
 
@@ -210,10 +210,10 @@ function Get-MostRecentBackupFile {
         [string[]]$SearchKeywords
     )
 
-    # Construct the search pattern by combining keywords with wildcards
+    # Construire le modèle de recherche en combinant les mots-clés avec des jokers
     $searchPattern = $SearchKeywords | ForEach-Object { "*$_*" }
 
-    # Initialize an array to hold matching files
+    # Initialiser un tableau pour contenir les fichiers correspondants
     $matchingFiles = @()
 
     foreach ($pattern in $searchPattern) {
@@ -227,7 +227,7 @@ function Get-MostRecentBackupFile {
         throw "No backup files found in directory '$Directory' matching the keywords: $($SearchKeywords -join ', ')"
     }
 
-    # Select the most recent file based on LastWriteTime
+    # Sélectionner le fichier le plus récent basé sur LastWriteTime
     $mostRecentFile = $matchingFiles | Sort-Object LastWriteTime -Descending | Select-Object -First 1
 
     return $mostRecentFile.FullName
@@ -235,15 +235,15 @@ function Get-MostRecentBackupFile {
 function Restore-AuthorizedSoftware {
     [CmdletBinding(DefaultParameterSetName = 'Directory')]
     param(
-        # Parameter Set 1: Specify Backup File
+        # Jeu de paramètres 1 : Spécifier le fichier de sauvegarde
         [Parameter(Mandatory = $false, Position = 0, ParameterSetName = 'File')]
         [string]$BackupFile,
 
-        # Parameter Set 2: Specify Backup Directory and Keywords
+        # Jeu de paramètres 2 : Spécifier le répertoire de sauvegarde et les mots-clés
         [Parameter(Mandatory = $false, ParameterSetName = 'Directory')]
         [string]$BackupDirectory,
 
-        # Common Parameters
+        # Paramètres communs
         [Parameter(Mandatory = $true)]
         [ValidateSet("All","Organizations","Devices")]
         [string]$TargetType,
@@ -252,10 +252,10 @@ function Restore-AuthorizedSoftware {
         [string]$RestoreTargets
     )
 
-    # Function to find the most recent backup file matching the keywords
+    # Fonction pour trouver le fichier de sauvegarde le plus récent correspondant aux mots-clés
     
 
-    # Determine the backup file based on the parameter set
+    # Déterminer le fichier de sauvegarde basé sur le jeu de paramètres
     switch ($PSCmdlet.ParameterSetName) {
         'File' {
             $BackupFilePath = $BackupFile
@@ -272,13 +272,13 @@ function Restore-AuthorizedSoftware {
         }
     }
 
-    # Ensure that Targets are not specified when TargetType is 'All'
+    # S'assurer que les cibles ne sont pas spécifiées quand TargetType est 'All'
     if ($TargetType -eq "All" -and $RestoreTargets) {
         Write-Error "Cannot specify targets when TargetType is 'All'. Remove the Targets parameter or choose a different TargetType."
         return
     }
 
-    # Read and parse the backup file
+    # Lire et analyser le fichier de sauvegarde
     try {
         $backupData = Get-Content $BackupFilePath -Raw | ConvertFrom-Json
     } catch {
@@ -286,7 +286,7 @@ function Restore-AuthorizedSoftware {
         return
     }
 
-    # Ensure that Organizations and Devices are at least empty arrays if not present
+    # S'assurer que Organizations et Devices sont au moins des tableaux vides s'ils ne sont pas présents
     if (-not $backupData.Organizations) {
         $backupData.Organizations = @()
     }
@@ -296,13 +296,13 @@ function Restore-AuthorizedSoftware {
 
     Write-Host "Starting restore from backup: $BackupFilePath" -ForegroundColor Cyan
 
-    # Split targets if provided
+    # Diviser les cibles si fournies
     $TargetList = $null
     if ($RestoreTargets) {
         $TargetList = $RestoreTargets -split "," | ForEach-Object { $_.Trim() }
     }
 
-    # Function to restore a single organization's authorized software
+    # Fonction pour restaurer les logiciels autorisés d'une seule organisation
     function Restore-Organization($OrgData) {
         $orgId = $OrgData.Id
         $orgName = $OrgData.Name
@@ -326,7 +326,7 @@ function Restore-AuthorizedSoftware {
         }
     }
 
-    # Function to restore a single device's authorized software
+    # Fonction pour restaurer les logiciels autorisés d'un seul appareil
     function Restore-Device($DevData) {
         $deviceId = $DevData.Id
         $deviceName = $DevData.Name
@@ -350,11 +350,11 @@ function Restore-AuthorizedSoftware {
 
     switch ($TargetType) {
         "All" {
-            # Restore all organizations
+            # Restaurer toutes les organisations
             foreach ($org in $backupData.Organizations) {
                 Restore-Organization $org
             }
-            # Restore all devices
+            # Restaurer tous les appareils
             foreach ($dev in $backupData.Devices) {
                 Restore-Device $dev
             }
@@ -362,12 +362,12 @@ function Restore-AuthorizedSoftware {
 
         "Organizations" {
             if (-not $TargetList) {
-                # Restore all organizations
+                # Restaurer toutes les organisations
                 foreach ($org in $backupData.Organizations) {
                     Restore-Organization $org
                 }
             } else {
-                # Prepare a lookup table only if we have organizations
+                # Préparer une table de recherche uniquement si nous avons des organisations
                 $OrgByName = @{}
                 if ($backupData.Organizations.Count -gt 0) {
                     $OrgByName = $backupData.Organizations | Group-Object -Property Name -AsHashTable -AsString
@@ -384,12 +384,12 @@ function Restore-AuthorizedSoftware {
 
         "Devices" {
             if (-not $TargetList) {
-                # Restore all devices
+                # Restaurer tous les appareils
                 foreach ($dev in $backupData.Devices) {
                     Restore-Device $dev
                 }
             } else {
-                # Prepare a lookup table only if we have devices
+                # Préparer une table de recherche uniquement si nous avons des appareils
                 $DevByName = @{}
                 if ($backupData.Devices.Count -gt 0) {
                     $DevByName = $backupData.Devices | Group-Object -Property Name -AsHashTable -AsString
@@ -409,23 +409,23 @@ function Restore-AuthorizedSoftware {
     Write-Host "Restore process completed." -ForegroundColor Green
 }
 
-# Conditional Logic Based on $Action
+# Logique conditionnelle basée sur $Action
 switch ($Action) {
     "Backup" {
-        # Backup Logic
+        # Logique de sauvegarde
         $OutputFile = "C:\Backup_$(Get-Date -Format 'yyyyMMdd_HHmmss').json"
         Backup-AuthorizedSoftware -OutputFile $OutputFile
     }
 
     "Restore" {
-        # Validation for Restore Parameters
+        # Validation des paramètres de restauration
         if (-not $BackupFile -and -not $BackupDirectory) {
             Write-Error "Error: You must provide either a BackupFile or BackupDirectory for restoration."
             exit
         }
         
         if (-not $BackupFile) {
-            # If no BackupFile is provided, find the most recent backup file in the BackupDirectory
+            # Si aucun BackupFile n'est fourni, trouver le fichier de sauvegarde le plus récent dans BackupDirectory
             try {
                 $BackupFile = Get-MostRecentBackupFile -Directory $BackupDirectory -SearchKeywords "Backup"
                 Write-Host "Using most recent backup file: $BackupFilePath" -ForegroundColor Cyan

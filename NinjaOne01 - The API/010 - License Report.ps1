@@ -1,14 +1,14 @@
 <#
 
-This is provided as an educational example of how to interact with the NinjaAPI.
-Any scripts should be evaluated and tested in a controlled setting before being utilized in production.
-As this script is an educational example, further improvements and enhancement may be necessary to handle larger datasets.
+Ceci est fourni comme exemple éducatif de comment interagir avec l'API Ninja.
+Tout script doit être évalué et testé dans un environnement contrôlé avant d'être utilisé en production.
+Comme ce script est un exemple éducatif, des améliorations supplémentaires peuvent être nécessaires pour gérer des ensembles de données plus importants.
 
-Script Notes:
-# Further evaluation and testing with VMware and Hyper-V hosts is recommended to ensure accurate tabulation
-# More information here: https://ninjarmm.zendesk.com/hc/en-us/community/posts/4424760908813/comments/4445857839757
+Notes du Script :
+# Une évaluation et des tests supplémentaires avec les hôtes VMware et Hyper-V sont recommandés pour assurer une tabulation précise
+# Plus d'informations ici : https://ninjarmm.zendesk.com/hc/en-us/community/posts/4424760908813/comments/4445857839757
 
-Attributions:
+Attributions :
 # Juan Miguel, Steve Mohring, Alexander Wissfeld
 
 #>
@@ -17,42 +17,42 @@ $NinjaOneInstance     = "app.ninjarmm.com"
 $NinjaOneClientId     = "-"
 $NinjaOneClientSecret = "-"
 
-# Initialize the body parameters for OAuth 2.0 authentication
+# Initialiser les paramètres du corps pour l'authentification OAuth 2.0
 $body = @{
-    grant_type = "client_credentials" # Defines the type of grant being requested
-    client_id = $NinjaOneClientId # Your NinjaRMM client application ID
-    client_secret = $NinjaOneClientSecret # Your NinjaRMM client application secret
-    scope = "monitoring" # The scope of access requested
+    grant_type = "client_credentials" # Définit le type d'autorisation demandé
+    client_id = $NinjaOneClientId # Votre ID d'application client NinjaRMM
+    client_secret = $NinjaOneClientSecret # Votre secret d'application client NinjaRMM
+    scope = "monitoring" # La portée d'accès demandée
 }
 
-# Create a dictionary to hold headers for the authentication request
+# Créer un dictionnaire pour contenir les en-têtes de la requête d'authentification
 $API_AuthHeaders = New-Object "System.Collections.Generic.Dictionary[[String],[String]]"
 $API_AuthHeaders.Add("accept", 'application/json')
 $API_AuthHeaders.Add("Content-Type", 'application/x-www-form-urlencoded')
 
-# Authenticate with NinjaRMM and retrieve the access token
+# S'authentifier avec NinjaRMM et récupérer le jeton d'accès
 $auth_token = Invoke-RestMethod -Uri https://$NinjaOneInstance/oauth/token -Method POST -Headers $API_AuthHeaders -Body $body
 $access_token = $auth_token | Select-Object -ExpandProperty 'access_token' -EA 0
 
-# Prepare headers for subsequent API requests using the obtained access token
+# Préparer les en-têtes pour les requêtes API suivantes en utilisant le jeton d'accès obtenu
 $headers = New-Object "System.Collections.Generic.Dictionary[[String],[String]]"
 $headers.Add("accept", 'application/json')
 $headers.Add("Authorization", "Bearer $access_token")
 
-# Get the current date in yyyyMMdd format
+# Obtenir la date actuelle au format yyyyMMdd
 $today = Get-Date -format "yyyyMMdd"
 
-# Define file path for the licenses report
+# Définir le chemin du fichier pour le rapport de licences
 $licenses_report = "C:\Users\JeffHunter\NinjaReports\" + $today + "_Ninja_Licenses_Report.csv"
 
-# Define API endpoints for devices and organizations
+# Définir les points de terminaison API pour les appareils et organisations
 $devices_url = "https://$NinjaOneInstance/v2/devices"
 $organizations_url = "https://$NinjaOneInstance/v2/organizations"
 $remotes_url = "https://$NinjaOneInstance/v2/group/16/device-ids"
 $bitdefenders_url = "https://$NinjaOneInstance/v2/group/8/device-ids"
 $webroots_url = "https://$NinjaOneInstance/v2/group/7/device-ids"
 
-# Retrieve data from NinjaRMM API
+# Récupérer les données depuis l'API NinjaRMM
 try {
     $devices = Invoke-RestMethod -Uri $devices_url -Method GET -Headers $headers
     $organizations = Invoke-RestMethod -Uri $organizations_url -Method GET -Headers $headers
@@ -66,7 +66,7 @@ catch {
 }
 
 
-# Extend organizations objects with additional properties to classify devices
+# Étendre les objets organisations avec des propriétés supplémentaires pour classifier les appareils
 Foreach ($organization in $organizations) {
     Add-Member -InputObject $organization -NotePropertyName "Workstations" -NotePropertyValue @()
     Add-Member -InputObject $organization -NotePropertyName "Servers" -NotePropertyValue @()
@@ -76,7 +76,7 @@ Foreach ($organization in $organizations) {
     Add-Member -InputObject $organization -NotePropertyName "Webroots" -NotePropertyValue @()
 }
 
-# Enumerate devices and assign them to their respective organization and category
+# Énumérer les appareils et les assigner à leur organisation et catégorie respectives
 Write-Host 'Enumerating everything ...'
 Foreach ($device in $devices) {
     $currentOrg = $organizations | Where-Object {$_.id -eq $device.organizationId}
@@ -93,7 +93,7 @@ Foreach ($device in $devices) {
 }
 Write-Host 'Done ✅'
 
-# Create and display a summary report of organizations and their device counts
+# Créer et afficher un rapport récapitulatif des organisations et leurs nombres d'appareils
 $reportSummary = Foreach ($organization in $organizations) {
     [PSCustomObject]@{
         Name = $organization.Name
@@ -107,12 +107,12 @@ $reportSummary = Foreach ($organization in $organizations) {
     }
 }
 
-# Display the summary report in a table format
+# Afficher le rapport récapitulatif en format tableau
 $reportSummary | Format-Table | Out-String
 
-# Export the report to a CSV file
+# Exporter le rapport vers un fichier CSV
 $reportSummary | Export-CSV -NoTypeInformation -Path $licenses_report
 
-# Confirm completion and report location
+# Confirmer la complétion et l'emplacement du rapport
 Write-Host "CSV files have been created with success!"
 Write-Host "Go to $licenses_report to find your Licenses Report"

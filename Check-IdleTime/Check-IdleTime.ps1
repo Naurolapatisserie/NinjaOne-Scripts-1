@@ -1,13 +1,47 @@
 #Requires -Version 5.1
 <#
 .SYNOPSIS
-  Per-user idle time while running as SYSTEM by launching a helper in each user session
-  that calls GetLastInputInfo and exits with idle seconds.
+  Mesure le temps d'inactivité par utilisateur sur les terminaux Windows, même en s'exécutant en tant que SYSTEM.
 
-.EXIT CODES
-  0 = OK (no threshold or idle < threshold)
-  1 = Not elevated
-  2 = ALERT (idle >= threshold)
+.DESCRIPTION
+    Ce script :
+    - S'exécute en tant que SYSTEM et lance un processus PowerShell léger dans chaque session utilisateur connectée.
+    - Utilise GetLastInputInfo pour déterminer depuis combien de temps chaque utilisateur est inactif.
+    - Sélectionne la session la plus pertinente (Console > Active la plus inactive > n'importe laquelle).
+    - Écrit les résultats dans les champs personnalisés NinjaOne (idleTime, idleTimeStatus).
+    - Prend en charge les seuils d'inactivité configurables.
+    - Retourne des codes de sortie standardisés pour l'automatisation des politiques.
+
+.PARAMETER ThresholdMinutes
+    [int] Le seuil de temps d'inactivité en minutes. Si le temps d'inactivité dépasse cette valeur, une alerte est déclenchée.
+    Par défaut : 0 (aucun seuil).
+
+.INPUTS
+    - La variable d'environnement `thresholdminutes` peut remplacer le paramètre ThresholdMinutes.
+
+.OUTPUTS
+    - Met à jour les champs personnalisés NinjaOne :
+        - `idleTime` : Durée d'inactivité lisible (ex. "1 hour(s), 20 minute(s)").
+        - `idleTimeStatus` : Minutes numériques ou texte d'alerte (ex. "ALERT: Idle 85 min (>= 60)").
+    - Affiche un tableau récapitulatif dans la console.
+
+.EXAMPLE
+    # Exécuter le script avec un seuil de 60 minutes
+    .\ScriptName.ps1 -ThresholdMinutes 60
+
+.EXAMPLE
+    # Exécuter le script sans seuil
+    .\ScriptName.ps1
+
+.NOTES
+    - Version PowerShell : 5.1 ou ultérieure.
+    - Doit s'exécuter en tant que SYSTEM pour accéder aux autres sessions utilisateur.
+    - Utilise les appels API Windows : GetLastInputInfo, WTSEnumerateSessions, CreateProcessAsUser.
+    - Codes de Sortie :
+        - 0 : OK (aucun seuil défini ou inactivité inférieure au seuil).
+        - 1 : Non élevé (doit s'exécuter en tant que SYSTEM).
+        - 2 : ALERTE (temps d'inactivité >= seuil).
+
 #>
 
 [CmdletBinding()]

@@ -4,14 +4,14 @@ param (
     [string]$Mode
 )
 
-# Assign environment variables
+# Assigner les variables d'environnement
 $Tags = $env:tagsToSearch
 $Mode = $env:mode
 
 Write-Output $Tags
 
 try {
-    # Convert input to array, trimming whitespace and ensuring it's always an array
+    # Convertir l'entrée en tableau, supprimer les espaces et s'assurer que c'est toujours un tableau
     $tagArray = @($Tags -split ',' | ForEach-Object { $_.Trim() })
 
     if (-not $tagArray -or $tagArray.Count -eq 0) {
@@ -19,7 +19,7 @@ try {
         exit 2
     }
 
-    # Get currently assigned tags from NinjaOne
+    # Obtenir les tags actuellement assignés depuis NinjaOne
     $currentTags = Get-NinjaTag
 
     if (-not $currentTags) {
@@ -31,7 +31,7 @@ try {
     Write-Host "Parsed Tags: $($tagArray -join ', ')"
     Write-Host "Current Ninja Tags: $($currentTags -join ', ')"
 
-    # If only one tag was specified, check for it directly
+    # Si un seul tag a été spécifié, le vérifier directement
     if ($tagArray.Count -eq 1) {
         if ($currentTags -contains $tagArray[0]) {
             Write-Host "Tag '$($tagArray[0])' is present."
@@ -42,10 +42,10 @@ try {
         }
     }
 
-    # Multi-tag logic based on $Mode
+    # Logique multi-tags basée sur $Mode
     switch ($Mode) {
         "all" {
-            # All specified tags must be present
+            # Tous les tags spécifiés doivent être présents
             $allFound = $tagArray | ForEach-Object { $currentTags -contains $_ } | Where-Object { $_ -eq $false } | Measure-Object
             if ($allFound.Count -eq 0) {
                 Write-Host "All specified tags are present."
@@ -56,7 +56,7 @@ try {
             }
         }
         "any" {
-            # At least one specified tag must be present
+            # Au moins un tag spécifié doit être présent
             $anyFound = $tagArray | Where-Object { $currentTags -contains $_ }
             if ($anyFound.Count -gt 0) {
                 Write-Host "At least one specified tag is present: $($anyFound -join ', ')"

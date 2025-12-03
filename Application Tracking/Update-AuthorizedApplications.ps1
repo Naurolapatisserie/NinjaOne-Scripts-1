@@ -1,12 +1,16 @@
 <#
 .SYNOPSIS
-    This script updates authorized software lists for organizations and devices in NinjaOne using its API.
+    Met à jour les listes de logiciels autorisés pour les organisations et appareils dans NinjaOne.
 
 .DESCRIPTION
-    This script interacts with the NinjaOne API to:
-    - Authorize all installed software for organizations.
-    - Add or remove specific software for selected organizations or devices.
-    - Automate updates to custom fields in NinjaOne based on input parameters or environment variables.
+    Ce script fournit plusieurs actions pour gérer les listes de logiciels autorisés :
+    1. **Autoriser Tous les Logiciels Installés** : Autorise tous les logiciels actuellement installés dans toutes les organisations.
+    2. **Ajouter des Logiciels aux Organisations** : Ajoute des logiciels à la liste autorisée pour toutes ou certaines organisations.
+    3. **Supprimer des Logiciels des Organisations** : Supprime des logiciels de la liste autorisée pour toutes ou certaines organisations.
+    4. **Ajouter des Logiciels aux Appareils** : Ajoute des logiciels à la liste autorisée pour des appareils spécifiques.
+    5. **Supprimer des Logiciels des Appareils** : Supprime des logiciels de la liste autorisée pour des appareils spécifiques.
+
+    Le script prend en charge le filtrage des cibles (organisations ou appareils) et met à jour dynamiquement les champs personnalisés NinjaOne.
 
 .PARAMETER Option1
     [string] Comma-separated list of organizations or "ALL" to authorize all current installed software.

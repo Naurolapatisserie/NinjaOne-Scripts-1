@@ -1,1 +1,1 @@
-This contains a series of educational scripts designed to demonstrate various ways to utilize the NinjaOne API.
+Ceci contient une série de scripts éducatifs conçus pour démontrer différentes façons d'utiliser l'API NinjaOne.

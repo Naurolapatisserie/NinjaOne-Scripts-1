@@ -1,79 +1,79 @@
-## 📘 Overview
+## 📘 Aperçu
 
-This PowerShell script measures **per-user idle time** on Windows endpoints, even when executed as **SYSTEM** - which is necessary to interface with NinjaOne custom fields.
+Ce script PowerShell mesure le **temps d'inactivité par utilisateur** sur les terminaux Windows, même lorsqu'il est exécuté en tant que **SYSTEM** - ce qui est nécessaire pour interagir avec les champs personnalisés NinjaOne.
 
-It works by launching a lightweight PowerShell helper **inside each logged-in user’s session**, which calls `GetLastInputInfo` to determine how long the user has been idle.
+Il fonctionne en lançant un assistant PowerShell léger **dans chaque session utilisateur connectée**, qui appelle `GetLastInputInfo` pour déterminer depuis combien de temps l'utilisateur est inactif.
 
-### ✅ Key Features
+### ✅ Fonctionnalités Clés
 
-- Measures **per-user** idle time via Windows API  
-- Runs as **SYSTEM** with `CreateProcessAsUser` for each session  
-- Selects the most relevant session (Console > most-idle Active > any)  
-- Writes to **NinjaOne custom fields**  
-- Supports configurable idle time thresholds  
-- Returns standardized **exit codes** for policy automation - i.e. only patching when the idle time has been above a certain threshold.
+- Mesure le temps d'inactivité **par utilisateur** via l'API Windows
+- S'exécute en tant que **SYSTEM** avec `CreateProcessAsUser` pour chaque session
+- Sélectionne la session la plus pertinente (Console > Active la plus inactive > n'importe laquelle)
+- Écrit dans les **champs personnalisés NinjaOne**
+- Prend en charge les seuils d'inactivité configurables
+- Retourne des **codes de sortie** standardisés pour l'automatisation des politiques - c.-à-d. appliquer les correctifs uniquement quand le temps d'inactivité a dépassé un certain seuil.
 
-### ⚙️ Exit Codes
+### ⚙️ Codes de Sortie
 
-| Code | Meaning |
+| Code | Signification |
 |------|----------|
-| `0`  | OK — no threshold set or idle below threshold |
-| `1`  | Not elevated (must run as SYSTEM) |
-| `2`  | ALERT — idle time ≥ threshold |
+| `0`  | OK — aucun seuil défini ou inactivité inférieure au seuil |
+| `1`  | Non élevé (doit s'exécuter en tant que SYSTEM) |
+| `2`  | ALERTE — temps d'inactivité ≥ seuil |
 
 ---
 
-## 🧩 How It Works
+## 🧩 Comment Ça Fonctionne
 
-### 1. Elevation Check
+### 1. Vérification de l'Élévation
 
-Ensures the script is running with Administrator privileges.  
-If not, it exits immediately with code **1**.
+S'assure que le script s'exécute avec les privilèges Administrateur.
+Sinon, il se termine immédiatement avec le code **1**.
 
-### 2. Result Collection
+### 2. Collecte des Résultats
 
-The main script collects results for all active sessions (`WTSActive`, `WTSConnected`, or `WTSIdle`):
+Le script principal collecte les résultats pour toutes les sessions actives (`WTSActive`, `WTSConnected`, ou `WTSIdle`) :
 
-| Property | Description |
+| Propriété | Description |
 |-----------|--------------|
-| `SessionId` | Windows session ID |
-| `WinStation` | Session name (e.g. Console, RDP-Tcp#5) |
-| `State` | Session state |
-| `IdleMinutes` | Calculated idle minutes |
-| `IdleSeconds` | Calculated idle seconds |
-| `MeasuredVia` | Method or status (e.g. `CreateProcessAsUser:GetLastInputInfo` or `Failed`) |
+| `SessionId` | ID de session Windows |
+| `WinStation` | Nom de session (ex. Console, RDP-Tcp#5) |
+| `State` | État de la session |
+| `IdleMinutes` | Minutes d'inactivité calculées |
+| `IdleSeconds` | Secondes d'inactivité calculées |
+| `MeasuredVia` | Méthode ou statut (ex. `CreateProcessAsUser:GetLastInputInfo` ou `Failed`) |
 
-### 3. Session Selection
+### 3. Sélection de Session
 
-The script prioritizes which session to evaluate:
+Le script priorise quelle session évaluer :
 
-1. Console session (if available)  
-2. Most-idle active session  
-3. Any other measured session (fallback)
+1. Session Console (si disponible)
+2. Session active la plus inactive
+3. Toute autre session mesurée (repli)
 
-### 4. NinjaOne Custom Field Updates
+### 4. Mises à Jour des Champs Personnalisés NinjaOne
 
-Two custom fields are updated:
+Deux champs personnalisés sont mis à jour :
 
-| Field | Type | Example Value | Description |
+| Champ | Type | Valeur Exemple | Description |
 |--------|------|----------------|--------------|
-| `idleTime` | Text | `1 hour(s), 20 minute(s)` | Human-readable idle duration |
-| `idleTimeStatus` | Text | `ALERT: Idle 85 min (>= 60)` or `85` | Numeric minutes or alert text |
+| `idleTime` | Texte | `1 hour(s), 20 minute(s)` | Durée d'inactivité lisible |
+| `idleTimeStatus` | Texte | `ALERT: Idle 85 min (>= 60)` ou `85` | Minutes numériques ou texte d'alerte |
 
-### 5. Threshold Handling
+### 5. Gestion du Seuil
 
-If a threshold is defined (`ThresholdMinutes` or `thresholdminutes` env var):
+Si un seuil est défini (`ThresholdMinutes` ou variable d'env `thresholdminutes`) :
 
-- When idle time ≥ threshold:  
-  → Writes an alert to `idleTimeStatus` and exits with code **2**
-- Otherwise:  
-  → Writes numeric idle time and exits **0**
+- Quand le temps d'inactivité ≥ seuil :
+  → Écrit une alerte dans `idleTimeStatus` et se termine avec le code **2**
+- Sinon :
+  → Écrit le temps d'inactivité numérique et se termine avec **0**
 
 ---
 
-## 🔧 Parameters and Environment Variables
+## 🔧 Paramètres et Variables d'Environnement
 
-Create a Script Form Variable called "Threshold Minutes" if you want to specifiy a certain timeframe that will constitute an idle device.
+Créez une Variable de Formulaire de Script appelée "Threshold Minutes" si vous voulez spécifier une durée qui constituera un appareil inactif.
 
 ```powershell
 $ThresholdMinutes = $env:thresholdminutes
@@ -81,40 +81,40 @@ $ThresholdMinutes = $env:thresholdminutes
 
 ---
 
-## 🧱 Setup in NinjaOne
+## 🧱 Configuration dans NinjaOne
 
-### 1. Create Device Custom Fields
+### 1. Créer les Champs Personnalisés d'Appareil
 
-Create two custom fields in NinjaOne under **Devices → Custom Fields**:
+Créez deux champs personnalisés dans NinjaOne sous **Appareils → Champs Personnalisés** :
 
-| Name | Type | Purpose |
+| Nom | Type | Objectif |
 |------|------|----------|
-| `idleTime` | Text | Stores the human-readable idle duration |
-| `idleTimeStatus` | Text | Stores either numeric minutes or an alert string |
+| `idleTime` | Texte | Stocke la durée d'inactivité lisible |
+| `idleTimeStatus` | Texte | Stocke soit les minutes numériques soit une chaîne d'alerte |
 
-### 2. Add the Script
+### 2. Ajouter le Script
 
-| Setting | Value |
+| Paramètre | Valeur |
 |----------|--------|
 | **Type** | PowerShell |
 | **OS** | Windows |
-| **Run As** | SYSTEM |
-| **PowerShell Version** | 5.1 |
-| **Execution Policy** | Bypass |
-| **Timeout** | ≥ 60 seconds recommended |
+| **Exécuter en tant que** | SYSTEM |
+| **Version PowerShell** | 5.1 |
+| **Politique d'Exécution** | Bypass |
+| **Timeout** | ≥ 60 secondes recommandé |
 
-Paste the full original script into the script body.
+Collez le script original complet dans le corps du script.
 
-### 3. Configure Thresholds
+### 3. Configurer les Seuils
 
-#### Create script variable
-Set a script variable in the script called "Threshold Minutes" that uses the "Integer" data type.
+#### Créer une variable de script
+Définissez une variable de script dans le script appelée "Threshold Minutes" qui utilise le type de données "Integer".
 
 ---
 
-## 🧾 Example Outputs
+## 🧾 Exemples de Sorties
 
-### Example 1 — No Threshold
+### Exemple 1 — Sans Seuil
 ```
 === Summary ===
 ComputerName       : DESKTOP123
@@ -125,51 +125,51 @@ ThresholdExceeded  : False
 UsedFallback       : False
 ```
 
-Custom Fields:
+Champs Personnalisés :
 ```
 idleTime: 38 minute(s)
 idleTimeStatus: 38
-Exit Code: 0
+Code de Sortie: 0
 ```
 
 ---
 
-### Example 2 — Threshold Exceeded
+### Exemple 2 — Seuil Dépassé
 ```
 Idle time threshold exceeded: 85 minute(s) (threshold: 60).
 ```
 
-Custom Fields:
+Champs Personnalisés :
 ```
 idleTime: 1 hour(s), 25 minute(s)
 idleTimeStatus: ALERT: Idle 85 min (>= 60)
-Exit Code: 2
+Code de Sortie: 2
 ```
 
 ---
 
-## 🔍 Troubleshooting
+## 🔍 Dépannage
 
-| Issue | Likely Cause | Solution |
+| Problème | Cause Probable | Solution |
 |--------|--------------|-----------|
-| `Access Denied` / Exit Code 1 | Script not elevated | Run as **SYSTEM** |
-| `(No sessions measured or all failed)` | No interactive users | Confirm a user is logged in |
-| Idle time incorrect | Different session evaluated | Check per-session table |
-| Threshold ignored | Env var override | Remove or update `thresholdminutes` |
-| Custom fields not updating | CFs missing or misnamed | Verify exact field names |
+| `Access Denied` / Code de Sortie 1 | Script non élevé | Exécuter en tant que **SYSTEM** |
+| `(No sessions measured or all failed)` | Aucun utilisateur interactif | Confirmer qu'un utilisateur est connecté |
+| Temps d'inactivité incorrect | Session différente évaluée | Vérifier le tableau par session |
+| Seuil ignoré | Remplacement de variable d'env | Supprimer ou mettre à jour `thresholdminutes` |
+| Champs personnalisés non mis à jour | CFs manquants ou mal nommés | Vérifier les noms exacts des champs |
 
 ---
 
-## 🧠 Technical Details
+## 🧠 Détails Techniques
 
-- **Windows API:** Uses `GetLastInputInfo` for precise idle tracking.
-- **Session Management:** Via `WTSEnumerateSessions` and `CreateProcessAsUser`.
-- **Supported States:** `WTSActive`, `WTSConnected`, `WTSIdle`.
-- **Run Context:** Must be **SYSTEM** to access other sessions.
-- **TickCount Handling:** Uses unsigned arithmetic to avoid overflow.
-- **Error Handling:** All `Ninja-Property-Set` calls wrapped in `try/catch`.
+- **API Windows :** Utilise `GetLastInputInfo` pour un suivi précis de l'inactivité.
+- **Gestion des Sessions :** Via `WTSEnumerateSessions` et `CreateProcessAsUser`.
+- **États Pris en Charge :** `WTSActive`, `WTSConnected`, `WTSIdle`.
+- **Contexte d'Exécution :** Doit être **SYSTEM** pour accéder aux autres sessions.
+- **Gestion de TickCount :** Utilise l'arithmétique non signée pour éviter le débordement.
+- **Gestion des Erreurs :** Tous les appels `Ninja-Property-Set` encapsulés dans `try/catch`.
 
 ---
 
-> 🧩 **Author’s Note:**  
-> This script is provided as-is and does not fall under normal scope of NinjaOne support.
+> 🧩 **Note de l'Auteur :**
+> Ce script est fourni tel quel et ne relève pas du support normal de NinjaOne.

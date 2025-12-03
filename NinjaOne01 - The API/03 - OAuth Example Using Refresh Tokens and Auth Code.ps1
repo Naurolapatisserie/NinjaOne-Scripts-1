@@ -1,25 +1,25 @@
 <#
-This is provided as an educational example of how to interact with the NinjaOne API using the authorization code and refresh token flow.
-Any scripts should be evaluated and tested in a controlled setting before being utilized in production.
-As this script is an educational example, further improvements and enhancement may be necessary to handle larger datasets.
+Ceci est fourni comme exemple éducatif de comment interagir avec l'API NinjaOne en utilisant le flux code d'autorisation et jeton de rafraîchissement.
+Tout script doit être évalué et testé dans un environnement contrôlé avant d'être utilisé en production.
+Comme ce script est un exemple éducatif, des améliorations supplémentaires peuvent être nécessaires pour gérer des ensembles de données plus importants.
 
-Description:
-    This script demonstrates the OAuth2 "Authorization Code" flow plus a token refresh to obtain a Bearer token
-    for NinjaOne API calls. It spins up a local HTTP listener to intercept the "authorization code" from the
-    NinjaOne OAuth callback, exchanges it for tokens, and then uses the refresh token to obtain a final access token.
+Description :
+    Ce script démontre le flux OAuth2 "Code d'Autorisation" plus un rafraîchissement de jeton pour obtenir un jeton Bearer
+    pour les appels API NinjaOne. Il lance un écouteur HTTP local pour intercepter le "code d'autorisation" du
+    callback OAuth NinjaOne, l'échange contre des jetons, puis utilise le jeton de rafraîchissement pour obtenir un jeton d'accès final.
 
-How the script works:
-    1) Define basic variables: $ClientID, $Secret, $Instance, $RedirectURL.
-    2) Create a function that starts a local HTTP listener on $RedirectURL, launches a browser to NinjaOne's
-       authorization page, and waits for the returned authorization code.
-    3) Exchange the authorization code for an initial token (including refresh token).
-    4) Use the refresh token to obtain the final Bearer token.
-    5) Prepare an Authorization header with the Bearer token for subsequent NinjaOne API calls.
+Comment le script fonctionne :
+    1) Définir les variables de base : $ClientID, $Secret, $Instance, $RedirectURL.
+    2) Créer une fonction qui démarre un écouteur HTTP local sur $RedirectURL, lance un navigateur vers la
+       page d'autorisation NinjaOne, et attend le code d'autorisation retourné.
+    3) Échanger le code d'autorisation contre un jeton initial (incluant le jeton de rafraîchissement).
+    4) Utiliser le jeton de rafraîchissement pour obtenir le jeton Bearer final.
+    5) Préparer un en-tête Authorization avec le jeton Bearer pour les appels API NinjaOne suivants.
 
-Security Note:
-    For demonstration, this script stores client_secret in a plain text variable. In a production environment,
-    store such secrets more securely (e.g., via the PowerShell Secret Management Module, Windows Credential Manager,
-    or Azure Key Vault). Also protect file permissions carefully.
+Note de Sécurité :
+    Pour la démonstration, ce script stocke client_secret dans une variable texte brut. Dans un environnement de production,
+    stockez ces secrets de manière plus sécurisée (ex. via le Module PowerShell Secret Management, Windows Credential Manager,
+    ou Azure Key Vault). Protégez également les permissions de fichiers soigneusement.
 
 #>
 
@@ -29,8 +29,8 @@ $NinjaOneClientSecret = "-"
 $redirect_uri = "http://localhost:8888/"
 $auth_url = "https://$NinjaOneInstance/ws/oauth/authorize"
 
-# Ensure System.Web Assembly is loaded
-# This assembly is required to parse the query strings from the URL callback
+# S'assurer que l'Assembly System.Web est chargé
+# Cet assembly est requis pour analyser les chaînes de requête du callback URL
 try {
     [System.Web.HttpUtility] | Out-Null
 }
@@ -39,24 +39,24 @@ catch {
 }
 
 
-# Start Local HTTP Server to Capture Auth Code
+# Démarrer le Serveur HTTP Local pour Capturer le Code d'Auth
 
 try {
-    # The listener will respond to GET requests with the 'code' parameter in the query string
+    # L'écouteur répondra aux requêtes GET avec le paramètre 'code' dans la chaîne de requête
     Write-Host "Starting HTTP server to listen for callback to $redirect_uri ..."
     $httpServer = [System.Net.HttpListener]::new()
     $httpServer.Prefixes.Add($redirect_uri)
     $httpServer.Start()
 
-    # Launch Browser to NinjaOne OAuth Page
+    # Lancer le Navigateur vers la Page OAuth NinjaOne
     Write-Host "Launching NinjaOne API OAuth authorization page $auth_url ..."
-    # Build the full authorization URL with query parameters
+    # Construire l'URL d'autorisation complète avec les paramètres de requête
     $AuthURL = "https://$Instance/ws/oauth/authorize?response_type=code&client_id=$NinjaOneClientId&client_secret=$NinjaOneSecret&redirect_uri=$redirect_uri&state=custom_state&scope=monitoring%20management%20offline_access"
     Start-Process $AuthURL
 
     Write-Host "Listening for authorization code from local callback to $redirect_uri ..."
 
-    # Listen for the Authorization Code
+    # Écouter le Code d'Autorisation
     while ($httpServer.IsListening) {
         $httpContext   = $httpServer.GetContext()
         $httpRequest   = $httpContext.Request
@@ -65,15 +65,15 @@ try {
 
         if ($httpRequest.IsLocal) {
             Write-Host "Heard local request to $httpRequestURL ..."
-            # Parse the query string to see if it contains the authorization code
+            # Analyser la chaîne de requête pour voir si elle contient le code d'autorisation
             $httpRequestQuery = [System.Web.HttpUtility]::ParseQueryString($httpRequestURL.Query)
 
             if (-not [string]::IsNullOrEmpty($httpRequestQuery['code'])) {
-                # Store the code if present
+                # Stocker le code si présent
                 $authorization_code = $httpRequestQuery['code']
                 $httpResponse.StatusCode = 200
 
-                # Simple HTML to display success message in the browser
+                # HTML simple pour afficher le message de succès dans le navigateur
                 [string]$httpResponseContent = "<html><body>Authorized! You may now close this browser tab/window.</body></html>"
                 $httpResponseBuffer = [System.Text.Encoding]::UTF8.GetBytes($httpResponseContent)
                 $httpResponse.ContentLength64 = $httpResponseBuffer.Length
@@ -85,15 +85,15 @@ try {
             }
         }
         else {
-            # Reject any non-local request to our listener
+            # Rejeter toute requête non locale vers notre écouteur
             Write-Host "HTTP 403: Blocking remote request to $httpRequestURL ..."
             $httpResponse.StatusCode = 403
         }
 
-        # Close the connection
+        # Fermer la connexion
         $httpResponse.Close()
 
-        # Stop the server once we have the authorization code
+        # Arrêter le serveur une fois que nous avons le code d'autorisation
         if (-not [string]::IsNullOrEmpty($authorization_code)) {
             $httpServer.Stop()
         }
@@ -105,7 +105,7 @@ catch {
     exit
 }
 
-# Exchange Authorization Code for an Initial Token
+# Échanger le Code d'Autorisation contre un Jeton Initial
 Write-Host "Exchanging Authorization Code for tokens ..."
 
 $AuthBody = @{
@@ -124,12 +124,12 @@ catch {
     Write-Error "Failed to connect to NinjaOne API. Error: $_"
     exit
 }
-# Store the refresh token for subsequent requests
+# Stocker le jeton de rafraîchissement pour les requêtes suivantes
 $RefreshToken = ($Response.Content | ConvertFrom-Json).refresh_token
 
 Write-Host "Initial token obtained. Refresh token is:" $RefreshToken
 
-# Build Authorization Header
+# Construire l'En-tête d'Autorisation
 $AccessToken = ($Response.Content | ConvertFrom-Json).access_token
 $AuthHeader = @{
     'Authorization' = "Bearer $AccessToken"

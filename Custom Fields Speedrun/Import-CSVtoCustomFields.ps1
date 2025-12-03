@@ -1,49 +1,50 @@
 <#
-This script demonstrates how to interact with the NinjaOne API, import device data from a CSV,
-match it with devices from NinjaOne, and update custom fields dynamically based on CSV headers.
-It includes enhanced error handling, logging, and dynamic request body generation.
+Ce script démontre comment interagir avec l'API NinjaOne, importer des données d'appareils à partir d'un fichier CSV,
+correspondre ces données avec les appareils de NinjaOne et mettre à jour les champs personnalisés de manière dynamique en fonction des en-têtes du CSV.
+Il inclut une gestion des erreurs améliorée, une journalisation et une génération dynamique du corps de la requête.
 
-Parameters:
-- $OverwriteEmptyValues: Determines if empty CSV values are included as $null (overwriting existing data)
-  or excluded from the update payload. (Default: $false)
+Paramètres :
+- $OverwriteEmptyValues : Détermine si les valeurs vides du CSV sont incluses comme $null (en écrasant les données existantes)
+  ou exclues du payload de mise à jour. (Par défaut : $false)
 
-Before running this script:
-- Ensure the CSV file (csvexample.csv) has at least the following columns: Id, name.
-- Additional CSV columns (e.g. assetOwner, location, etc.) will be used as custom fields.
-- Replace $NinjaOneClientId and $NinjaOneClientSecret with your credentials.
+Avant d'exécuter ce script :
+- Assurez-vous que le fichier CSV (csvexample.csv) a au moins les colonnes suivantes : Id, name.
+- Les colonnes supplémentaires du CSV (par exemple, assetOwner, location, etc.) seront utilisées comme champs personnalisés.
+- Remplacez $NinjaOneClientId et $NinjaOneClientSecret par vos identifiants.
+
 #>
 
 param(
     [bool]$OverwriteEmptyValues = $false
 )
 
-# Your NinjaRMM credentials
-$NinjaOneInstance = ''  # Varies by region/environment (e.g. 'app.ninjarmm.com' for US)
-$NinjaOneClientId = ''                  # Enter your client id here
-$NinjaOneClientSecret = ''              # Enter your client secret here
+# Vos identifiants NinjaRMM
+$NinjaOneInstance = ''  # Varie en fonction de la région/environnement (par exemple 'app.ninjarmm.com' pour les États-Unis)
+$NinjaOneClientId = ''                  # Entrez votre ID client ici
+$NinjaOneClientSecret = ''              # Entrez votre secret client ici
 
-# Import device data from a CSV file
+# Importer les données d'appareils depuis un fichier CSV
 $csvPath = "C:\Users\JeffHunter\OneDrive - NinjaOne\Custom Fields Speedrun\datatoimport.csv"
 
 try {
     $deviceimports = Import-Csv -Path $csvPath
 } catch {
-    Write-Error "Failed to import CSV file from $csvPath. $_"
+    Write-Error "Échec de l'importation du fichier CSV à partir de $csvPath. $_"
     exit 1
 }
 
-# Validate CSV has required columns (Id and name)
+# Valider que le CSV a les colonnes requises (Id et name)
 $requiredColumns = @("Id", "name")
 foreach ($col in $requiredColumns) {
     if (-not ($deviceimports[0].PSObject.Properties.Name -contains $col)) {
-        Write-Error "CSV file is missing required column '$col'. Please verify the CSV structure."
+        Write-Error "Le fichier CSV manque de la colonne requise '$col'. Veuillez vérifier la structure du CSV."
         exit 1
     }
 }
 
-Write-Host "CSV Import successful. Processing $($deviceimports.Count) entries..."
+Write-Host "Importation du CSV réussie. Traitement de $($deviceimports.Count) entrées..."
 
-# Prepare the body for authentication
+# Préparer le corps pour l'authentification
 $body = @{
     grant_type    = "client_credentials"
     client_id     = $NinjaOneClientId
@@ -51,35 +52,35 @@ $body = @{
     scope         = "monitoring management"
 }
 
-# Prepare headers for authentication request
+# Préparer les en-têtes pour la requête d'authentification
 $API_AuthHeaders = New-Object "System.Collections.Generic.Dictionary[[String],[String]]"
 $API_AuthHeaders.Add("accept", "application/json")
 $API_AuthHeaders.Add("Content-Type", "application/x-www-form-urlencoded")
 
-# Obtain the authentication token
+# Obtenir le jeton d'authentification
 try {
     $auth_token = Invoke-RestMethod -Uri "https://$NinjaOneInstance/oauth/token" -Method POST -Headers $API_AuthHeaders -Body $body
     $access_token = $auth_token.access_token
 } catch {
-    Write-Error "Failed to obtain authentication token. $_"
+    Write-Error "Échec de l'obtention du jeton d'authentification. $_"
     exit 1
 }
 
-# Prepare headers for subsequent API requests
+# Préparer les en-têtes pour les requêtes API suivantes
 $headers = New-Object "System.Collections.Generic.Dictionary[[String],[String]]"
 $headers.Add("accept", "application/json")
 $headers.Add("Authorization", "Bearer $access_token")
 
-# Fetch the detailed list of devices from NinjaOne
+# Récupérer la liste détaillée des appareils de NinjaOne
 $devices_url = "https://$NinjaOneInstance/v2/devices-detailed"
 try {
     $devices = Invoke-RestMethod -Uri $devices_url -Method GET -Headers $headers
 } catch {
-    Write-Error "Failed to fetch devices. $_"
+    Write-Error "Échec de la récupération des appareils. $_"
     exit 1
 }
 
-# Function: Invoke-NinjaAPIRequest with a retry mechanism
+# Fonction : Invoke-NinjaAPIRequest avec un mécanisme de réessai
 function Invoke-NinjaAPIRequest {
     param (
         [Parameter(Mandatory = $true)][string]$Uri,
@@ -94,32 +95,32 @@ function Invoke-NinjaAPIRequest {
         try {
             return Invoke-RestMethod -Uri $Uri -Method $Method -Headers $Headers -Body $Body -ContentType "application/json"
         } catch {
-            Write-Error "API request to $Uri failed on attempt $($retryCount + 1): $_"
+            Write-Error "La requête API vers $Uri a échoué à la tentative $($retryCount + 1) : $_"
             $retryCount++
             Start-Sleep -Seconds 2
         }
     }
-    Write-Error "API request to $Uri failed after $maxRetries attempts."
+    Write-Error "La requête API vers $Uri a échoué après $maxRetries tentatives."
     return $null
 }
 
-# Process each device import entry and prepare asset objects with dynamic custom fields.
+# Traiter chaque entrée d'importation d'appareil et préparer les objets d'actifs avec des champs personnalisés dynamiques.
 $assets = foreach ($deviceimport in $deviceimports) {
-    # Find the matching device by ID
+    # Trouver l'appareil correspondant par ID
     $device = $devices | Where-Object { $_.id -eq $deviceimport.Id }
 
-    # Build a dynamic dictionary of custom fields from CSV.
-    # Exclude known fields ('Id' and 'name'); include all other columns.
+    # Construire un dictionnaire dynamique de champs personnalisés à partir du CSV.
+    # Exclure les champs connus ('Id' et 'name') ; inclure toutes les autres colonnes.
     $customFields = @{}
     foreach ($property in $deviceimport.PSObject.Properties) {
         if ($property.Name -notin @("Id", "name")) {
-            # Check for empty value.
+            # Vérifier la valeur vide.
             if ([string]::IsNullOrEmpty($property.Value)) {
                 if ($OverwriteEmptyValues) {
-                    # Include the property with a $null value to overwrite existing data.
+                    # Inclure la propriété avec une valeur $null pour écraser les données existantes.
                     $customFields[$property.Name] = $null
                 } else {
-                    # Skip the property to leave current data intact.
+                    # Ignorer la propriété pour laisser les données actuelles intactes.
                     continue
                 }
             } else {
@@ -136,7 +137,7 @@ $assets = foreach ($deviceimport in $deviceimports) {
             CustomFields = $customFields
         }
     } else {
-        Write-Warning "Device ID $($deviceimport.Id) not found in the devices list."
+        Write-Warning "L'appareil ID $($deviceimport.Id) n'a pas été trouvé dans la liste des appareils."
         [PSCustomObject]@{
             Name         = $deviceimport.name
             ID           = $deviceimport.Id
@@ -146,29 +147,29 @@ $assets = foreach ($deviceimport in $deviceimports) {
     }
 }
 
-# Debug: Print out the assets imported.
-Write-Host "Imported Assets:"
-$assets | ForEach-Object { Write-Host "ID: $($_.ID) - Name: $($_.Name) - SystemName: $($_.SystemName)" }
+# Debug : Afficher les actifs importés.
+Write-Host "Actifs importés :"
+$assets | ForEach-Object { Write-Host "ID : $($_.ID) - Nom : $($_.Name) - Nom du système : $($_.SystemName)" }
 
-# Update custom fields for each asset (only if SystemName is not null and there are custom fields to update)
+# Mettre à jour les champs personnalisés pour chaque actif (uniquement si SystemName n'est pas null et qu'il y a des champs personnalisés à mettre à jour)
 foreach ($asset in $assets) {
     if (($null -ne $asset.SystemName) -and $asset.CustomFields.Count -gt 0) {
-        # Define NinjaOne API endpoint for updating custom fields.
+        # Définir le point de terminaison de l'API NinjaOne pour la mise à jour des champs personnalisés.
         $customfields_url = "https://$NinjaOneInstance/api/v2/device/$($asset.ID)/custom-fields"
 
-        # Convert the dynamic custom fields dictionary to JSON.
+        # Convertir le dictionnaire dynamique de champs personnalisés en JSON.
         $json = $asset.CustomFields | ConvertTo-Json -Depth 3
 
-        Write-Host "Patching custom fields for: $($asset.SystemName) with data:"
+        Write-Host "Mise à jour des champs personnalisés pour : $($asset.SystemName) avec les données :"
         Write-Host $json
 
-        # Update the custom fields via the API using our helper function.
+        # Mettre à jour les champs personnalisés via l'API en utilisant notre fonction d'assistance.
         $result = Invoke-NinjaAPIRequest -Uri $customfields_url -Method 'Patch' -Headers $headers -Body $json
         if ($result -eq $null) {
-            Write-Error "Failed to update custom fields for $($asset.Name)."
+            Write-Error "Échec de la mise à jour des champs personnalisés pour $($asset.Name)."
         }
         
-        # Optional: Delay to help with API rate limits.
+        # Optionnel : Délai pour aider à gérer les limites de débit de l'API.
         Start-Sleep -Seconds 1
     } else {
         Write-Warning "Skipping update for asset with ID $($asset.ID) as SystemName is null or no custom fields provided."

@@ -1,17 +1,55 @@
-param (
-    [string]$Option3,  # comma-separated string of organizations or "ALL"
-    [string]$Option4,  # comma-separated string of software to add per org (specified in Option3)
-    [string]$Option5,  # comma-separated string of organizations or "All"
-    [string]$Option6,  # comma-separated string of software to remove per org (specified in Option5)
-    [string]$Option7,  # comma-separated string of devices
-    [string]$Option8,  # comma-separated string of software to add per device (specified in Option7)
-    [string]$Option9,  # comma-separated string of devices
-    [string]$Option10  # comma-separated string of software to remove per device (specified in Option9)
-)
+<#
+.SYNOPSIS
+    Met à jour les listes de déploiement de logiciels pour les organisations et appareils dans NinjaOne.
 
-# Define custom field property names via variables
-$organizationFieldName = "softwareToInstallOrganization"
-$deviceFieldName       = "softwareToInstallDevice"
+.DESCRIPTION
+    Ce script fournit plusieurs actions pour gérer les listes de déploiement de logiciels :
+    1. **Ajouter des Logiciels aux Organisations** : Ajoute des logiciels à la liste de déploiement pour toutes ou certaines organisations.
+    2. **Supprimer des Logiciels des Organisations** : Supprime des logiciels de la liste de déploiement pour toutes ou certaines organisations.
+    3. **Ajouter des Logiciels aux Appareils** : Ajoute des logiciels à la liste de déploiement pour des appareils spécifiques.
+    4. **Supprimer des Logiciels des Appareils** : Supprime des logiciels de la liste de déploiement pour des appareils spécifiques.
+
+    Le script prend en charge le filtrage des cibles (organisations ou appareils) et met à jour dynamiquement les champs personnalisés NinjaOne.
+
+.PARAMETER AppendToOrganizations
+    [string] Une liste séparée par virgules des noms d'organisations auxquelles ajouter des logiciels.
+
+.PARAMETER SoftwareToAppend
+    [string] Une liste séparée par virgules des noms de logiciels à ajouter à la liste de déploiement.
+
+.PARAMETER RemoveFromOrganizations
+    [string] Une liste séparée par virgules des noms d'organisations desquelles supprimer des logiciels.
+
+.PARAMETER SoftwareToRemove
+    [string] Une liste séparée par virgules des noms de logiciels à supprimer de la liste de déploiement.
+
+.PARAMETER AppendToDevices
+    [string] Une liste séparée par virgules des noms d'appareils auxquels ajouter des logiciels.
+
+.PARAMETER DeviceSoftwareToAppend
+    [string] Une liste séparée par virgules des noms de logiciels à ajouter à la liste de déploiement de l'appareil.
+
+.PARAMETER RemoveFromDevices
+    [string] Une liste séparée par virgules des noms d'appareils desquels supprimer des logiciels.
+
+.PARAMETER DeviceSoftwareToRemove
+    [string] Une liste séparée par virgules des noms de logiciels à supprimer de la liste de déploiement de l'appareil.
+
+.NOTES
+    - Version PowerShell : 5.1 ou ultérieure.
+    - Le script nécessite des identifiants API pour NinjaOne.
+#>
+
+param (
+    [string]$Option3,
+    [string]$Option4,
+    [string]$Option5,
+    [string]$Option6,
+    [string]$Option7,
+    [string]$Option8,
+    [string]$Option9,
+    [string]$Option10
+)
 
 if ($env:appendToOrganizations -and $env:appendToOrganizations -notlike "null") { 
     $Option3 = $env:appendToOrganizations 
@@ -46,11 +84,14 @@ if ($env:deviceSoftwareToRemove -and $env:deviceSoftwareToRemove -notlike "null"
 }
 
 # Configuration
-$NinjaOneInstance     = Ninja-Property-Get ninjaoneInstance
-$NinjaOneClientId     = Ninja-Property-Get ninjaoneClientId
+$NinjaOneInstance = Ninja-Property-Get ninjaoneInstance
+$NinjaOneClientId = Ninja-Property-Get ninjaoneClientId
 $NinjaOneClientSecret = Ninja-Property-Get ninjaoneClientSecret
 
-# Authentication
+$organizationFieldName = "softwareToDeploy"
+$deviceFieldName = "deviceSoftwareToDeploy"
+
+# Authentification
 $authBody = @{
     grant_type    = "client_credentials"
     client_id     = $NinjaOneClientId

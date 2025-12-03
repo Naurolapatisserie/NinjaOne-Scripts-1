@@ -4,11 +4,11 @@ $NinjaOneClientID = ''
 $NinjaOneClientSecret = ''
 $NinjaOneInstance = 'ca.ninjarmm.com'
 
-$OutPath = 'c:\temp\InstallerTokens.csv'
+$OutPath = 'c:\temp\InstallerTokens.csv' # Afficher le jeton d'installations.csv
 
-# Authenticate and get bearer token
+# Obtenir le jeton d'authentification et get bearer token
 $AuthBody = @{
-    'grant_type'    = 'client_credentials'
+    'grant_type'    = 'Vos identifiants NinjaRMM'
     'client_id'     = $NinjaOneClientID
     'client_secret' = $NinjaOneClientSecret
     'scope'         = 'monitoring management' 
@@ -20,7 +20,7 @@ $NinjaAuthHeader = @{
     'Authorization' = "Bearer $(($Result.content | ConvertFrom-Json).access_token)"
 }
 
-# Function to generate installer
+# Fonction pour générer l'installateur
 Function Get-NinjaAdvancedInstaller {
     Param (
         $OrgID,
@@ -43,7 +43,7 @@ Function Get-NinjaAdvancedInstaller {
     Return $Result
 }
 
-# Get Ninja Organisations
+# Obtenir les organisations Ninja
 $After = 0
 $PageSize = 1000
 $NinjaOrgs = do {
@@ -54,7 +54,7 @@ $NinjaOrgs = do {
     $After = $ResultCount.maximum
 } while ($ResultCount.count -eq $PageSize)
 
-# Get Ninja Locations
+# Obtenir les emplacements Ninja
 $After = 0
 $PageSize = 1000
 $NinjaLocs = do {
@@ -65,13 +65,13 @@ $NinjaLocs = do {
     $After = $ResultCount.maximum
 } while ($ResultCount.count -eq $PageSize)
 
-# Get Roles and filter for WINDOWS nodeClass
+# Obtenir les rôles et filtrer pour WINDOWS nodeClass
 $Roles = (Invoke-WebRequest -uri "https://$($NinjaOneInstance)/api/v2/roles" `
     -Method GET -Headers $NinjaAuthHeader -ContentType 'application/json').content | ConvertFrom-Json -Depth 100
 
 $WindowsRoles = $Roles | Where-Object { $_.nodeClass -match 'WINDOWS' }
 
-# Generate Installers for each location and each Windows role
+# Générer les installateurs pour chaque emplacement et chaque rôle Windows
 $Tokens = foreach ($Location in $NinjaLocs) {
     $Org = $NinjaOrgs | Where-Object { $_.id -eq $Location.organizationId }
 

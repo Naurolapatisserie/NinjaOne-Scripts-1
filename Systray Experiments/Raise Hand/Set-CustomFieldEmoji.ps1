@@ -2,7 +2,7 @@ $CustomFieldName = $env:customFieldName
 
 $Message = '✋'
 
-# Function to check if a command exists
+# Fonction pour vérifier si une commande existe
 function Test-CommandExists {
     param (
         [Parameter(Mandatory = $true)]
@@ -11,13 +11,13 @@ function Test-CommandExists {
     return (Get-Command $CommandName -ErrorAction SilentlyContinue) -ne $null
 }
 
-# Check if Ninja-Property-Set cmdlet exists
+# Vérifier si la cmdlet Ninja-Property-Set existe
 if (-not (Test-CommandExists -CommandName 'Ninja-Property-Set')) {
     Write-Error "Ninja-Property-Set cmdlet not found. Please ensure it is installed and accessible."
     exit 1
 }
 
-# Function to set custom field
+# Fonction pour définir le champ personnalisé
 function Set-CustomField {
     param (
         [Parameter(Mandatory = $true)]
@@ -35,7 +35,7 @@ function Set-CustomField {
     }
 }
 
-# Function to clear custom field
+# Fonction pour effacer le champ personnalisé
 function Clear-CustomField {
     param (
         [Parameter(Mandatory = $true)]
@@ -50,12 +50,12 @@ function Clear-CustomField {
     }
 }
 
-# Set the custom field with the message
+# Définir le champ personnalisé avec le message
 Set-CustomField -FieldName $CustomFieldName -Value $Message
 
-# Wait for 5 minutes
+# Attendre 5 minutes
 Write-Host "Waiting for 5 minutes..."
 Start-Sleep -Seconds 180
 
-# Clear the custom field
+# Effacer le champ personnalisé
 Clear-CustomField -FieldName $CustomFieldName

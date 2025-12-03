@@ -1,1 +1,1 @@
-A collection of scripts useful for troubleshooting
+Une collection de scripts utiles pour le dépannage

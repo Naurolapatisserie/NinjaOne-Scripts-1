@@ -1,8 +1,8 @@
 <#
 
-This is provided as an educational example of how to interact with the NinjaAPI.
-Any scripts should be evaluated and tested in a controlled setting before being utilized in production.
-As this script is an educational example, further improvements and enhancement may be necessary to handle larger datasets.
+Ceci est fourni comme exemple éducatif de comment interagir avec l'API Ninja.
+Tout script doit être évalué et testé dans un environnement contrôlé avant d'être utilisé en production.
+Comme ce script est un exemple éducatif, des améliorations supplémentaires peuvent être nécessaires pour gérer des ensembles de données plus importants.
 
 #>
 
@@ -10,20 +10,20 @@ $NinjaOneInstance     = "app.ninjarmm.com"
 $NinjaOneClientId     = "-"
 $NinjaOneClientSecret = "-"
 
-# Define authentication details
+# Définir les détails d'authentification
 $body = @{
     grant_type = "client_credentials"
-    client_id = $NinjaOneClientId # Replace with your actual client ID
-    client_secret = $NinjaOneClientSecret # Replace with your actual client secret
+    client_id = $NinjaOneClientId # Remplacer par votre ID client réel
+    client_secret = $NinjaOneClientSecret # Remplacer par votre secret client réel
     scope = "monitoring management"
 }
 
-# Set headers for the authentication request
+# Définir les en-têtes pour la requête d'authentification
 $API_AuthHeaders = New-Object "System.Collections.Generic.Dictionary[[String],[String]]"
 $API_AuthHeaders.Add("accept", 'application/json')
 $API_AuthHeaders.Add("Content-Type", 'application/x-www-form-urlencoded')
 
-# Obtain an access token from the NinjaRMM OAuth token endpoint
+# Obtenir un jeton d'accès depuis le point de terminaison OAuth NinjaRMM
 try {
     $auth_token = Invoke-RestMethod -Uri https://$NinjaOneInstance/oauth/token -Method POST -Headers $API_AuthHeaders -Body $body
     $access_token = $auth_token.access_token
@@ -32,21 +32,21 @@ catch {
     Write-Error "Failed to connect to NinjaOne API. Error: $_"
     exit}
 
-# Check if we successfully obtained an access token
+# Vérifier si nous avons obtenu un jeton d'accès avec succès
 if (-not $access_token) {
     Write-Host "Failed to obtain access token. Please check your client ID and client secret."
     exit
 }
 
-# Set headers for subsequent API requests using the obtained access token
+# Définir les en-têtes pour les requêtes API suivantes en utilisant le jeton d'accès obtenu
 $headers = New-Object "System.Collections.Generic.Dictionary[[String],[String]]"
 $headers.Add("accept", 'application/json')
 $headers.Add("Authorization", "Bearer $access_token")
 
-# Import device data from a CSV file
+# Importer les données d'appareils depuis un fichier CSV
 $deviceimports = Import-CSV -Path "C:\Users\JeffHunter\OneDrive - NinjaOne\Scripting\NinjaOne01 - The API\NinjaOne01 - The API\Resources\Import to Device CF.csv"
 
-# Prepare the devices list from the imported CSV data
+# Préparer la liste des appareils à partir des données CSV importées
 $assets = Foreach ($deviceimport in $deviceimports) {
     [PSCustomObject]@{
         Name = $deviceimport.name
@@ -55,22 +55,22 @@ $assets = Foreach ($deviceimport in $deviceimports) {
     }
 }
 
-# Update custom fields for each device
+# Mettre à jour les champs personnalisés pour chaque appareil
 foreach ($asset in $assets) {
-    # Construct the URL for the device's custom fields endpoint
+    # Construire l'URL pour le point de terminaison des champs personnalisés de l'appareil
     $customfields_url = "https://$NinjaOneInstance/api/v2/device/" + $asset.ID + "/custom-fields"
 
-    # Prepare the request body with the custom field data
+    # Préparer le corps de la requête avec les données du champ personnalisé
     $request_body = @{
         assetOwner = $asset.AssetOwner
     }
 
-    # Convert the request body to JSON format
+    # Convertir le corps de la requête au format JSON
     $json = $request_body | ConvertTo-Json
 
-    # Display the current operation
+    # Afficher l'opération en cours
     Write-Host "Patching custom fields for: " $asset.Name
 
-    # Send a PATCH request to update the custom fields for the device
+    # Envoyer une requête PATCH pour mettre à jour les champs personnalisés de l'appareil
     Invoke-RestMethod -Method 'Patch' -Uri $customfields_url -Headers $headers -Body $json -ContentType "application/json" -Verbose
 }

@@ -1,67 +1,67 @@
-Thank you to all who attended the Compound Conditions webinar, which you can find on YouTube here: https://youtu.be/y7WvImYobJ0
+Merci à tous ceux qui ont assisté au webinaire sur les Conditions Composées, que vous pouvez trouver sur YouTube ici : https://youtu.be/y7WvImYobJ0
 
-## First Example: Software Deployment with Compound Conditions
+## Premier Exemple : Déploiement de Logiciels avec Conditions Composées
 
-The first example revolved around software deployment by utilizing a compound condition to check for the absence of software (Google Chrome in this case), while also looking for the text string **"Google Chrome"** in a custom field.
+Le premier exemple portait sur le déploiement de logiciels en utilisant une condition composée pour vérifier l'absence d'un logiciel (Google Chrome dans ce cas), tout en recherchant la chaîne de texte **"Google Chrome"** dans un champ personnalisé.
 
-To update more easily, you can leverage an automated documentation server or API server to bulk update and append to custom fields.
+Pour mettre à jour plus facilement, vous pouvez utiliser un serveur de documentation automatisée ou un serveur API pour mettre à jour en masse et ajouter aux champs personnalisés.
 
-### Steps:
-- **Read more about setting up an API server here:** [NinjaOne API Setup](https://docs.mspp.io/ninjaone/getting-started)
-- **Set up a multi-line custom field** with 'Organization' scope, with Read/Write capabilities for the API and Read-Only for automations.
-  - Whether you want technicians to be able to modify this field is up to you—otherwise, only system administrators would be able to update, remove, and add software for deployment using the API server method.
-  - If technicians can modify this, it's recommended to regularly back up the list of applications to be installed via API.
-- **Set up a second multi-line custom field** with 'Device' scope so that applications can be specified per device.
+### Étapes :
+- **En savoir plus sur la configuration d'un serveur API ici :** [Configuration API NinjaOne](https://docs.mspp.io/ninjaone/getting-started)
+- **Configurer un champ personnalisé multi-lignes** avec la portée 'Organisation', avec des capacités Lecture/Écriture pour l'API et Lecture seule pour les automatisations.
+  - Que vous vouliez que les techniciens puissent modifier ce champ dépend de vous—sinon, seuls les administrateurs système pourraient mettre à jour, supprimer et ajouter des logiciels pour le déploiement en utilisant la méthode du serveur API.
+  - Si les techniciens peuvent le modifier, il est recommandé de sauvegarder régulièrement la liste des applications à installer via API.
+- **Configurer un second champ personnalisé multi-lignes** avec la portée 'Appareil' pour que les applications puissent être spécifiées par appareil.
 
-### Script for Updating Deployed Software
-Access the script to update deployed software here, and import it into NinjaOne.
+### Script pour Mettre à Jour les Logiciels Déployés
+Accédez au script pour mettre à jour les logiciels déployés ici, et importez-le dans NinjaOne.
 
-#### Required Script Variables:
-| Name | Pretty Name | Script Variable Type |
+#### Variables de Script Requises :
+| Nom | Nom Affiché | Type de Variable de Script |
 |------|------------|----------------------|
-| `appendToOrganizations` | Append To Organizations | String/Text |
-| `softwareToAppend` | Software To Append | String/Text |
-| `removeFromOrganizations` | Remove From Organizations | String/Text |
-| `softwareToRemove` | Software To Remove | String/Text |
-| `appendToDevices` | Append To Devices | String/Text |
-| `deviceSoftwareToAppend` | Device Software To Append | String/Text |
-| `removeFromDevices` | Remove From Devices | String/Text |
-| `deviceSoftwareToRemove` | Device Software To Remove | String/Text |
+| `appendToOrganizations` | Ajouter aux Organisations | Texte |
+| `softwareToAppend` | Logiciel à Ajouter | Texte |
+| `removeFromOrganizations` | Supprimer des Organisations | Texte |
+| `softwareToRemove` | Logiciel à Supprimer | Texte |
+| `appendToDevices` | Ajouter aux Appareils | Texte |
+| `deviceSoftwareToAppend` | Logiciel d'Appareil à Ajouter | Texte |
+| `removeFromDevices` | Supprimer des Appareils | Texte |
+| `deviceSoftwareToRemove` | Logiciel d'Appareil à Supprimer | Texte |
 
-You can now use the API server and the `Update-SoftwareDeployment` script to start creating a comma-separated list of applications that should be installed for an organization. Then, create a **compound condition** looking for:
-1. The absence of that software.
-2. The text string identifying your application that is found in your custom field(s).
+Vous pouvez maintenant utiliser le serveur API et le script `Update-SoftwareDeployment` pour commencer à créer une liste séparée par virgules des applications qui devraient être installées pour une organisation. Ensuite, créez une **condition composée** recherchant :
+1. L'absence de ce logiciel.
+2. La chaîne de texte identifiant votre application qui se trouve dans votre/vos champ(s) personnalisé(s).
 
 ---
 
-## Second Example: Authorized Applications Tracking
+## Deuxième Exemple : Suivi des Applications Autorisées
 
-The second example was an **inversion of the first**—instead of setting up applications for deployment, this approach establishes a **list of authorized applications** in an organization scope and/or device scope WYSIWYG custom field.
+Le deuxième exemple était une **inversion du premier**—au lieu de configurer des applications pour le déploiement, cette approche établit une **liste d'applications autorisées** dans un champ personnalisé WYSIWYG de portée organisation et/ou appareil.
 
-📌 **Full documentation and scripts for this workflow:**  
-[GitHub - NinjaOne Application Tracking](https://github.com/jeffhunterninja/NinjaOne-Scripts/tree/main/Application%20Tracking)
+📌 **Documentation complète et scripts pour ce flux de travail :**
+[GitHub - Suivi des Applications NinjaOne](https://github.com/jeffhunterninja/NinjaOne-Scripts/tree/main/Application%20Tracking)
 
-### Workflow Overview:
-- **`Check-AuthorizedApplications`** runs as a **script result condition** as part of a compound condition.
-  - A **custom field condition** (e.g., a checkbox) can be used as an enablement switch if you don’t want these checks to apply to all organizations.
-- **`Update-AuthorizedApplications`** runs on your API server and is used to:
-  - Update, remove, or append application names to a **comma-separated string** stored in a WYSIWYG field at either the organization or device level.
-- **`Recover-AuthorizedApplications`** backs up your stored comma-separated string with an **option to restore** if necessary.
-- **`Report-UnauthorizedApplications`** retrieves all currently reported unauthorized applications for:
-  - A **global view** of unauthorized applications.
-  - Easier **whitelisting at scale**.
+### Aperçu du Flux de Travail :
+- **`Check-AuthorizedApplications`** s'exécute en tant que **condition de résultat de script** dans le cadre d'une condition composée.
+  - Une **condition de champ personnalisé** (ex. une case à cocher) peut être utilisée comme interrupteur d'activation si vous ne voulez pas que ces vérifications s'appliquent à toutes les organisations.
+- **`Update-AuthorizedApplications`** s'exécute sur votre serveur API et est utilisé pour :
+  - Mettre à jour, supprimer ou ajouter des noms d'applications à une **chaîne séparée par virgules** stockée dans un champ WYSIWYG au niveau de l'organisation ou de l'appareil.
+- **`Recover-AuthorizedApplications`** sauvegarde votre chaîne séparée par virgules stockée avec une **option de restauration** si nécessaire.
+- **`Report-UnauthorizedApplications`** récupère toutes les applications non autorisées actuellement signalées pour :
+  - Une **vue globale** des applications non autorisées.
+  - Une **mise en liste blanche à grande échelle** plus facile.
 
-## Third Example: Using NinjaOne Documentation for Device Configuration
+## Troisième Exemple : Utilisation de la Documentation NinjaOne pour la Configuration des Appareils
 
-The third example utilized **NinjaOne Documentation** to create a document with **custom field checkboxes** that indicate whether certain device configurations should be enabled or not.
+Le troisième exemple utilisait la **Documentation NinjaOne** pour créer un document avec des **cases à cocher de champs personnalisés** qui indiquent si certaines configurations d'appareils doivent être activées ou non.
 
-### Process:
-1. **Custom Field Checkboxes**  
-   - A document is created in **NinjaOne Documentation** with checkboxes that specify if certain device configurations should be enabled (e.g., "Enable Firewall").
-   
-2. **Script Result Condition (Check Configuration Intent)**  
-   - A **script result condition** is used as part of a **compound condition** to check if the checkbox is marked in the documentation - this script here: https://github.com/jeffhunterninja/NinjaOne-Scripts/blob/main/Compound%20Conditions%20Webinar/Check%20Device%20Configurations%20Document.ps1
+### Processus :
+1. **Cases à Cocher de Champs Personnalisés**
+   - Un document est créé dans la **Documentation NinjaOne** avec des cases à cocher qui spécifient si certaines configurations d'appareils doivent être activées (ex. "Activer le Pare-feu").
 
-3. **Script Result Condition (Verify Device State)**  
-   - A second **script result condition** evaluates the actual **state of the device**.
-   - For example, if the **Device Configuration** document has the checkbox marked for **"Enable Firewall"**, the template library script **"Audit Firewall Status"** is used to confirm whether the firewall is actually enabled on the device.
+2. **Condition de Résultat de Script (Vérifier l'Intention de Configuration)**
+   - Une **condition de résultat de script** est utilisée dans le cadre d'une **condition composée** pour vérifier si la case est cochée dans la documentation - ce script ici : https://github.com/jeffhunterninja/NinjaOne-Scripts/blob/main/Compound%20Conditions%20Webinar/Check%20Device%20Configurations%20Document.ps1
+
+3. **Condition de Résultat de Script (Vérifier l'État de l'Appareil)**
+   - Une seconde **condition de résultat de script** évalue l'**état réel de l'appareil**.
+   - Par exemple, si le document **Configuration de l'Appareil** a la case cochée pour **"Activer le Pare-feu"**, le script de la bibliothèque de modèles **"Audit Firewall Status"** est utilisé pour confirmer si le pare-feu est réellement activé sur l'appareil.

@@ -1,58 +1,58 @@
-# Script Variables: Schedule Modes & Parameters
+# Variables de Script : Modes de Planification & Paramètres
 
-This document outlines the configurable script variables used to define scheduling behavior in the script. The scheduling is controlled through a combination of execution modes (`Mode`) and supporting parameters that vary depending on the selected mode.
+Ce document décrit les variables de script configurables utilisées pour définir le comportement de planification dans le script. La planification est contrôlée par une combinaison de modes d'exécution (`Mode`) et de paramètres de support qui varient selon le mode sélectionné.
 
 ---
 
-## 📋 Script Variables Overview
+## 📋 Aperçu des Variables de Script
 
-| Variable                  | Used For                  | Type      | Notes                                                                 |
+| Variable                  | Utilisée Pour                  | Type      | Notes                                                                 |
 |---------------------------|---------------------------|-----------|-----------------------------------------------------------------------|
-| `Mode`                   | Execution type             | DROPDOWN  | Required. Options: `Once`, `Daily`, `Weekly`, `Monthly`, `Window`    |
-| `Target Time`            | Time or DateTime           | DATETIME  | Full datetime for `Once`, time only for `Daily`, `Weekly`, and `Monthly` |
-| `Weekly Day Of Week`     | Weekly mode                | TEXT      | Comma-separated days (e.g., `Monday,Wednesday`)                      |
-| `Monthly Day Of Month`   | Monthly mode               | INTEGER   | Numeric day of the month (1–31)                                      |
-| `Window Recurrence`      | Window recurrence          | DROPDOWN  | Required for `Window` mode. Options: `Daily`, `Weekly`               |
-| `Window Start`           | Start of window            | DATETIME  | Time only used                                                       |
-| `Window End`             | End of window              | DATETIME  | Time only used                                                       |
-| `Window Day of Week`     | Weekly window mode         | TEXT      | Required if `Window Recurrence` is `Weekly`; comma-separated         |
+| `Mode`                   | Type d'exécution             | LISTE DÉROULANTE  | Requis. Options : `Once`, `Daily`, `Weekly`, `Monthly`, `Window`    |
+| `Target Time`            | Heure ou DateTime           | DATETIME  | DateTime complet pour `Once`, heure seulement pour `Daily`, `Weekly`, et `Monthly` |
+| `Weekly Day Of Week`     | Mode hebdomadaire                | TEXTE      | Jours séparés par des virgules (ex. `Monday,Wednesday`)                      |
+| `Monthly Day Of Month`   | Mode mensuel               | ENTIER   | Jour numérique du mois (1–31)                                      |
+| `Window Recurrence`      | Récurrence de fenêtre          | LISTE DÉROULANTE  | Requis pour le mode `Window`. Options : `Daily`, `Weekly`               |
+| `Window Start`           | Début de fenêtre            | DATETIME  | Seule l'heure est utilisée                                                       |
+| `Window End`             | Fin de fenêtre              | DATETIME  | Seule l'heure est utilisée                                                       |
+| `Window Day of Week`     | Mode fenêtre hebdomadaire         | TEXTE      | Requis si `Window Recurrence` est `Weekly` ; séparés par des virgules         |
 
 ---
 
-## 🔄 Mode Behavior and Field Requirements
+## 🔄 Comportement des Modes et Champs Requis
 
 ### `Once`
-- **Uses**: Full `Target Time` (date and time)
-- **Required**: `Target Time`
+- **Utilise** : `Target Time` complet (date et heure)
+- **Requis** : `Target Time`
 
 ### `Daily`
-- **Uses**: Time from `Target Time`
-- **Required**: `Target Time`
+- **Utilise** : Heure de `Target Time`
+- **Requis** : `Target Time`
 
 ### `Weekly`
-- **Uses**: Time from `Target Time` and `Weekly Day Of Week`
-- **Required**: `Target Time`, `Weekly Day Of Week`
+- **Utilise** : Heure de `Target Time` et `Weekly Day Of Week`
+- **Requis** : `Target Time`, `Weekly Day Of Week`
 
 ### `Monthly`
-- **Uses**: Time from `Target Time` and `Monthly Day Of Month`
-- **Required**: `Target Time`, `Monthly Day Of Month`
+- **Utilise** : Heure de `Target Time` et `Monthly Day Of Month`
+- **Requis** : `Target Time`, `Monthly Day Of Month`
 
 ### `Window`
-- **Uses**: `Window Recurrence`, `Window Start`, `Window End`, optionally `Window Day of Week`
-- **Required**:
+- **Utilise** : `Window Recurrence`, `Window Start`, `Window End`, optionnellement `Window Day of Week`
+- **Requis** :
   - `Window Recurrence`
   - `Window Start`
   - `Window End`
-  - `Window Day of Week` (if recurrence is `Weekly`)
+  - `Window Day of Week` (si la récurrence est `Weekly`)
 
 ---
-**Important Note About Condition Resets and Script Timeouts**
+**Note Importante sur les Réinitialisations de Conditions et les Timeouts de Script**
 
-It is not recommended to use "When no longer" for any mode - only use time-based resets.
+Il n'est pas recommandé d'utiliser "When no longer" pour aucun mode - utilisez uniquement les réinitialisations basées sur le temps.
 
-For any mode, it's important to adjust the $TimeWindowMinutes variable in the script to be in sync with your interval and script timeout. For example, if I'm running my compound condition every 15 minutes, I would set my $TimeWindowMinutes to 16 minutes. This allows the script to sleep until the desired $TargetTime is reached. I need to ensure that the timeout for the script exceeds my $TimeWindowMinutes - so in my case I would make it 17 minutes.
--Script interval
--$TimeWindowMinutes = interval + 1 minute
--Script timeout = interval + 2 minutes
+Pour tout mode, il est important d'ajuster la variable $TimeWindowMinutes dans le script pour être synchronisée avec votre intervalle et timeout de script. Par exemple, si j'exécute ma condition composée toutes les 15 minutes, je définirais mon $TimeWindowMinutes à 16 minutes. Cela permet au script de dormir jusqu'à ce que le $TargetTime désiré soit atteint. Je dois m'assurer que le timeout du script dépasse mon $TimeWindowMinutes - donc dans mon cas je le mettrais à 17 minutes.
+-Intervalle du script
+-$TimeWindowMinutes = intervalle + 1 minute
+-Timeout du script = intervalle + 2 minutes
 
-When using Window mode, it also becomes important to ensure the auto-reset is longer than the maintenance window - i.e. a 4 hour maintenance window should have a 4 hour or longer auto-reset time. If the reset is too short, the automation could potentially trigger again if there is not an adequate state change monitor as a part of the compound condition.
+Lors de l'utilisation du mode Window, il devient également important de s'assurer que la réinitialisation automatique est plus longue que la fenêtre de maintenance - c.-à-d. une fenêtre de maintenance de 4 heures devrait avoir un temps de réinitialisation automatique de 4 heures ou plus. Si la réinitialisation est trop courte, l'automatisation pourrait potentiellement se déclencher à nouveau s'il n'y a pas un moniteur de changement d'état adéquat dans la condition composée.

@@ -1,15 +1,15 @@
 <#
-This is provided as an educational example of how to interact with the NinjaAPI.
-Any scripts should be evaluated and tested in a controlled setting before being utilized in production.
-As this script is an educational example, further improvements and enhancements may be necessary to handle larger datasets.
+Ceci est fourni comme exemple éducatif de comment interagir avec l'API Ninja.
+Tout script doit être évalué et testé dans un environnement contrôlé avant d'être utilisé en production.
+Comme ce script est un exemple éducatif, des améliorations supplémentaires peuvent être nécessaires pour gérer des ensembles de données plus importants.
 #>
 
-# Your NinjaRMM credentials
+# Vos identifiants NinjaRMM
 $NinjaOneInstance = 'ca.ninjarmm.com' # Adjust if necessary based on your region
 $NinjaOneClientId = ''
 $NinjaOneClientSecret = ''
 
-# Prepare the body for authentication
+# Préparer le corps pour l'authentification
 $body = @{
     grant_type = "client_credentials"
     client_id = $NinjaOneClientId
@@ -17,12 +17,12 @@ $body = @{
     scope = "monitoring management"
 }
 
-# Prepare headers for authentication request
+# Préparer les en-têtes pour la requête d'authentification
 $API_AuthHeaders = New-Object "System.Collections.Generic.Dictionary[[String],[String]]"
 $API_AuthHeaders.Add("accept", 'application/json')
 $API_AuthHeaders.Add("Content-Type", 'application/x-www-form-urlencoded')
 
-# Obtain the authentication token
+# Obtenir le jeton d'authentification
 try {
     $auth_token = Invoke-RestMethod -Uri https://$NinjaOneInstance/oauth/token -Method POST -Headers $API_AuthHeaders -Body $body
     $access_token = $auth_token | Select-Object -ExpandProperty 'access_token' -EA 0
@@ -31,15 +31,15 @@ try {
     exit 1
 }
 
-# Prepare headers for subsequent API requests
+# Préparer les en-têtes pour les requêtes API suivantes
 $headers = New-Object "System.Collections.Generic.Dictionary[[String],[String]]"
 $headers.Add("accept", 'application/json')
 $headers.Add("Authorization", "Bearer $access_token")
 
-# Import device data from a CSV file
+# Importer les données d'appareils depuis un fichier CSV
 $deviceimports = Import-CSV -Path "C:\Users\JeffHunter\Documents\NinjaReports\csvexample2.csv"
 
-# Process each device import entry
+# Traiter chaque entrée d'importation d'appareil
 $assets = foreach ($deviceimport in $deviceimports) {
     [PSCustomObject]@{
         Name = $deviceimport.systemName
@@ -48,7 +48,7 @@ $assets = foreach ($deviceimport in $deviceimports) {
     }
 }
 
-# Fetch the detailed list of devices from NinjaOne
+# Récupérer la liste détaillée des appareils depuis NinjaOne
 $devices_url = "https://$NinjaOneInstance/v2/devices"
 try {
     $devices = Invoke-RestMethod -Uri $devices_url -Method GET -Headers $headers
@@ -58,7 +58,7 @@ try {
 }
 
 
-# Match devices and add their IDs to the assets
+# Faire correspondre les appareils et ajouter leurs IDs aux actifs
 foreach ($device in $devices) {
     $currentDev = $assets | Where-Object { $_.Name -eq $device.systemName }
     if ($null -ne $currentDev) {
@@ -66,24 +66,24 @@ foreach ($device in $devices) {
     }
 }
 
-# Update the display names for each asset
+# Mettre à jour les noms d'affichage pour chaque actif
 foreach ($asset in $assets) {
     if ($null -ne $asset.ID) {
-        # Define NinjaOne API endpoint for updating display name
+        # Définir le point de terminaison API NinjaOne pour mettre à jour le nom d'affichage
         $displayname_url = "https://$NinjaOneInstance/api/v2/device/" + $asset.ID
 
-        # Extract display name and prepare the request body
+        # Extraire le nom d'affichage et préparer le corps de la requête
         $displayname = $asset.DisplayName
         $request_body = @{
             displayName = "$displayname"
         }
 
-        # Convert the request body to JSON
+        # Convertir le corps de la requête en JSON
         $json = $request_body | ConvertTo-Json
 
         Write-Host "Changing display name for:" $asset.Name "to" $asset.DisplayName
 
-        # Update the display name via the API
+        # Mettre à jour le nom d'affichage via l'API
         try {
             Invoke-RestMethod -Method 'Patch' -Uri $displayname_url -Headers $headers -Body $json -ContentType "application/json" -Verbose
         } catch {

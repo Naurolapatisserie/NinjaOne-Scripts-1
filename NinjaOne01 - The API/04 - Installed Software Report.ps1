@@ -1,30 +1,30 @@
 <#
 
-This is provided as an educational example of how to interact with the NinjaAPI.
-Any scripts should be evaluated and tested in a controlled setting before being utilized in production.
-As this script is an educational example, further improvements and enhancement may be necessary to handle larger datasets.
+Ceci est fourni comme exemple éducatif de comment interagir avec l'API Ninja.
+Tout script doit être évalué et testé dans un environnement contrôlé avant d'être utilisé en production.
+Comme ce script est un exemple éducatif, des améliorations supplémentaires peuvent être nécessaires pour gérer des ensembles de données plus importants.
 
-Script Notes:
-# This utilizes a third-party module to generate an HTML report called PSWriteHTML
-# Script can be modified to produce a CSV if preferred
+Notes du Script :
+# Ceci utilise un module tiers pour générer un rapport HTML appelé PSWriteHTML
+# Le script peut être modifié pour produire un CSV si préféré
 
 #>
 
-# Install and import the required module
-# Check if PSWriteHTML module is installed
+# Installer et importer le module requis
+# Vérifier si le module PSWriteHTML est installé
 $module = Get-Module -ListAvailable -Name PSWriteHTML
 if (-not $module) {
-    # If the module is not installed, install it
+    # Si le module n'est pas installé, l'installer
     Install-Module -Name PSWriteHTML -AllowClobber -Force
 }
-# Import the PSWriteHTML module
+# Importer le module PSWriteHTML
 Import-Module -Name PSWriteHTML
 
 $NinjaOneInstance     = "app.ninjarmm.com"
 $NinjaOneClientId     = "-"
 $NinjaOneClientSecret = "-"
 
-# Body for authentication
+# Corps pour l'authentification
 $body = @{
     grant_type = "client_credentials"
     client_id = $NinjaOneClientId
@@ -32,13 +32,13 @@ $body = @{
     scope = "monitoring"
 }
 
-# Headers for authentication
+# En-têtes pour l'authentification
 $API_AuthHeaders = @{
     'accept' = 'application/json'
     'Content-Type' = 'application/x-www-form-urlencoded'
 }
 
-# Authenticate and get access token
+# S'authentifier et obtenir le jeton d'accès
 try {
     $auth_token = Invoke-RestMethod -Uri "https://$NinjaOneInstance/oauth/token" -Method POST -Headers $API_AuthHeaders -Body $body
     $access_token = $auth_token.access_token
@@ -47,24 +47,24 @@ catch {
     Write-Error "Failed to connect to NinjaOne API. Error: $_"
     exit
 }
-# Check if we successfully obtained an access token
+# Vérifier si nous avons obtenu un jeton d'accès avec succès
 if (-not $access_token) {
     Write-Host "Failed to obtain access token. Please check your client ID and client secret."
     exit
 }
-# Headers for subsequent API calls
+# En-têtes pour les appels API suivants
 $headers = @{
     'accept' = 'application/json'
     'Authorization' = "Bearer $access_token"
 }
 
-# Define Ninja URLs
+# Définir les URLs Ninja
 $devices_url = "https://$NinjaOneInstance/v2/devices-detailed"
 $organizations_url = "https://$NinjaOneInstance/v2/organizations-detailed"
 $locations_url = "https://$NinjaOneInstance/v2/locations"
 $softwares_url = "https://$NinjaOneInstance/v2/queries/software"
 
-# Call Ninja URLs to get data
+# Appeler les URLs Ninja pour obtenir les données
 try {
     $devices = Invoke-RestMethod -Uri $devices_url -Method GET -Headers $headers
     $organizations = Invoke-RestMethod -Uri $organizations_url -Method GET -Headers $headers
@@ -76,17 +76,17 @@ catch {
     exit
 }
 
-# Define application names for filtering
+# Définir les noms d'applications pour le filtrage
 $appNames = @("Chrome", "Firefox", "Edge")
 
-# Filter software results
+# Filtrer les résultats logiciels
 $filteredObjCreated = $softwares.results | Where-Object { $_.name -ne $null } | Select-Object name, version, deviceId, publisher
 $filteredObj = $appNames | ForEach-Object {
     $appName = $_
     $filteredObjCreated | Where-Object { $_.name -like "*$appName*" }
 } | Sort-Object deviceId -Unique
 
-# Add device name, organization name, and location name to make a complete report
+# Ajouter le nom de l'appareil, le nom de l'organisation et le nom de l'emplacement pour faire un rapport complet
 foreach ($device in $devices){
     $currentDev = $filteredObj | Where-Object {$_.deviceId -eq $device.id}
     $currentDev | Add-Member -MemberType NoteProperty -Name 'DeviceName' -Value $device.systemname -Force
@@ -102,5 +102,5 @@ foreach ($location in $locations){
     $currentLoc | Add-Member -MemberType NoteProperty -Name 'LocName' -Value $location.name -Force 
 }
 
-# Output the HTML view
+# Afficher la vue HTML
 $filteredObj | Out-HtmlView

@@ -1,29 +1,29 @@
 <#
 
-This is provided as an educational example of how to interact with the NinjaAPI with the authorization code grant type and the "Web" application platform.
-Any scripts should be evaluated and tested in a controlled setting before being utilized in production.
-As this script is an educational example, further improvements and enhancement may be necessary to handle larger datasets.
+Ceci est fourni comme exemple éducatif de comment interagir avec l'API Ninja avec le type d'autorisation code d'autorisation et la plateforme d'application "Web".
+Tout script doit être évalué et testé dans un environnement contrôlé avant d'être utilisé en production.
+Comme ce script est un exemple éducatif, des améliorations supplémentaires peuvent être nécessaires pour gérer des ensembles de données plus importants.
 
-# Attributions:
-Ryan Southwell for the HTTP listener that retrieves the authorization code
+# Attributions :
+Ryan Southwell pour l'écouteur HTTP qui récupère le code d'autorisation
 
-# How this script works:
-#   1) Define essential variables for OAuth (client_id, client_secret, redirect_uri, scope, etc.).
-#   2) Load or add the System.Web assembly if not already loaded; required to parse URL query strings.
-#   3) Start a local HTTP server that listens for the authorization code (callback from NinjaOne).
-#   4) Open (launch) a browser window to NinjaOne's OAuth authorization page.
-#   5) Once authorized, the script captures the "code" parameter from the redirected URL.
-#   6) Use that authorization code, along with your client credentials, to request an access token.
-#   7) Define headers with the new Bearer token.
-#   8) Make an example API call (e.g. retrieve a list of organizations).
-#   9) Output the results to the console.
+# Comment ce script fonctionne :
+#   1) Définir les variables essentielles pour OAuth (client_id, client_secret, redirect_uri, scope, etc.).
+#   2) Charger ou ajouter l'assembly System.Web si pas déjà chargé ; requis pour analyser les chaînes de requête URL.
+#   3) Démarrer un serveur HTTP local qui écoute le code d'autorisation (callback de NinjaOne).
+#   4) Ouvrir (lancer) une fenêtre de navigateur vers la page d'autorisation OAuth de NinjaOne.
+#   5) Une fois autorisé, le script capture le paramètre "code" de l'URL redirigée.
+#   6) Utiliser ce code d'autorisation, avec vos identifiants client, pour demander un jeton d'accès.
+#   7) Définir les en-têtes avec le nouveau jeton Bearer.
+#   8) Faire un appel API exemple (ex. récupérer une liste d'organisations).
+#   9) Afficher les résultats dans la console.
 
-#   DISCLAIMER: This script intentionally stores OAuth credentials in variables (for demonstration).
-#   In a production environment, consider storing credentials more securely using:
+#   AVERTISSEMENT : Ce script stocke intentionnellement les identifiants OAuth dans des variables (pour démonstration).
+#   Dans un environnement de production, considérez stocker les identifiants de manière plus sécurisée en utilisant :
 #       - Windows Credential Manager
-#       - Secret Management Module in PowerShell
-#       - Azure Key Vault (in Azure environments)
-#   and always restrict file permissions for any stored secrets.
+#       - Module Secret Management dans PowerShell
+#       - Azure Key Vault (dans les environnements Azure)
+#   et toujours restreindre les permissions de fichiers pour tout secret stocké.
 
 #>
 
@@ -32,11 +32,11 @@ $NinjaOneClientId     = "-"
 $NinjaOneClientSecret = "-"
 $redirect_uri = "http://localhost:8888/"
 
-# OAuth2 scope and authorization URL
+# Portée OAuth2 et URL d'autorisation
 $scope = "monitoring management"
 $auth_url = "https://$NinjaOneInstance/ws/oauth/authorize"
 
-# This assembly is required to parse the query strings from the URL callback
+# Cet assembly est requis pour analyser les chaînes de requête du callback URL
 Try {
     [System.Web.HttpUtility] | Out-Null
 }
@@ -44,24 +44,24 @@ Catch {
     Add-Type -AssemblyName System.Web
 }
 
-# Start Local HTTP Server to Capture Auth Code
-# The listener will respond to GET requests with the 'code' parameter in the query string
+# Démarrer le Serveur HTTP Local pour Capturer le Code d'Auth
+# L'écouteur répondra aux requêtes GET avec le paramètre 'code' dans la chaîne de requête
 Write-Host "Starting HTTP server to listen for callback to $redirect_uri ..."
 $httpServer = [System.Net.HttpListener]::new()
 $httpServer.Prefixes.Add($redirect_uri)
 $httpServer.Start()
 
 
-# Launch Browser to NinjaOne OAuth Page
+# Lancer le Navigateur vers la Page OAuth NinjaOne
 Try {
 Write-Host "Launching NinjaOne API OAuth authorization page $auth_url ..."
-# Build the full authorization URL with query parameters
+# Construire l'URL d'autorisation complète avec les paramètres de requête
 $auth_redirect_url = $auth_url + "?response_type=code&client_id=" + $NinjaOneClientId + "&redirect_uri=" + $redirect_uri + "&state=custom_state&scope=monitoring%20management"
 Start-Process $auth_redirect_url
 
 Write-Host "Listening for authorization code from local callback to $redirect_uri ..."
 
-# Listen for the Authorization Code
+# Écouter le Code d'Autorisation
 while ($httpServer.IsListening) {
     $httpContext   = $httpServer.GetContext()
     $httpRequest   = $httpContext.Request
@@ -70,15 +70,15 @@ while ($httpServer.IsListening) {
 
     if ($httpRequest.IsLocal) {
         Write-Host "Heard local request to $httpRequestURL ..."
-        # Parse the query string to see if it contains the authorization code
+        # Analyser la chaîne de requête pour voir si elle contient le code d'autorisation
         $httpRequestQuery = [System.Web.HttpUtility]::ParseQueryString($httpRequestURL.Query)
 
         if (-not [string]::IsNullOrEmpty($httpRequestQuery['code'])) {
-            # Store the code if present
+            # Stocker le code si présent
             $authorization_code = $httpRequestQuery['code']
             $httpResponse.StatusCode = 200
 
-            # Simple HTML to display success message in the browser
+            # HTML simple pour afficher le message de succès dans le navigateur
             [string]$httpResponseContent = "<html><body>Authorized! You may now close this browser tab/window.</body></html>"
             $httpResponseBuffer = [System.Text.Encoding]::UTF8.GetBytes($httpResponseContent)
             $httpResponse.ContentLength64 = $httpResponseBuffer.Length
@@ -90,15 +90,15 @@ while ($httpServer.IsListening) {
         }
     }
     else {
-        # Reject any non-local request to our listener
+        # Rejeter toute requête non locale vers notre écouteur
         Write-Host "HTTP 403: Blocking remote request to $httpRequestURL ..."
         $httpResponse.StatusCode = 403
     }
 
-    # Close the connection
+    # Fermer la connexion
     $httpResponse.Close()
 
-    # Stop the server once we have the authorization code
+    # Arrêter le serveur une fois que nous avons le code d'autorisation
     if (-not [string]::IsNullOrEmpty($authorization_code)) {
         $httpServer.Stop()
     }
@@ -111,12 +111,12 @@ Catch {
     exit
 }
 
-# Prepare headers for token request
+# Préparer les en-têtes pour la requête de jeton
 $API_AuthHeaders = New-Object "System.Collections.Generic.Dictionary[[String],[String]]"
 $API_AuthHeaders.Add("accept", "application/json")
 $API_AuthHeaders.Add("Content-Type", "application/x-www-form-urlencoded")
 
-# Body for token request
+# Corps pour la requête de jeton
 $body = @{
     grant_type    = "authorization_code"
     client_id     = $NinjaOneClientId
@@ -135,24 +135,24 @@ catch {
     exit
 }
 
-# Extract the access token from the returned JSON
+# Extraire le jeton d'accès du JSON retourné
 $access_token = $auth_token | Select-Object -ExpandProperty 'access_token' -EA 0
-# Check if we successfully obtained an access token
+# Vérifier si nous avons obtenu un jeton d'accès avec succès
 if (-not $access_token) {
     Write-Host "Failed to obtain access token. Please check your client ID and client secret."
     exit
 }
 Write-Host "Retrieved access token: $access_token"
-# Build headers with access token to make API calls
+# Construire les en-têtes avec le jeton d'accès pour faire des appels API
 $headers = New-Object "System.Collections.Generic.Dictionary[[String],[String]]"
 $headers.Add("accept", "application/json")
 $headers.Add("Authorization", "Bearer $access_token")
 
-# Define Ninja URLs
+# Définir les URLs Ninja
 $devices_url = "https://$NinjaOneInstance/v2/devices-detailed"
 $organizations_url = "https://$NinjaOneInstance/v2/organizations-detailed"
 
-# Call Ninja URLs to get data
+# Appeler les URLs Ninja pour obtenir les données
 try {
     $devices = Invoke-RestMethod -Uri $devices_url -Method GET -Headers $headers
     $organizations = Invoke-RestMethod -Uri $organizations_url -Method GET -Headers $headers
@@ -161,13 +161,13 @@ catch {
     Write-Error "Failed to retrieve organizations and devices from NinjaOne API. Error: $_"
     exit
 }
-# Extend organizations objects with additional properties to classify devices
+# Étendre les objets organisations avec des propriétés supplémentaires pour classifier les appareils
 Foreach ($organization in $organizations) {
     Add-Member -InputObject $organization -NotePropertyName "Workstations" -NotePropertyValue @()
     Add-Member -InputObject $organization -NotePropertyName "Servers" -NotePropertyValue @()
 }
 
-# Loop through all devices and copy each device to corresponding organization, with separate properties for storing servers and workstations
+# Parcourir tous les appareils et copier chaque appareil vers l'organisation correspondante, avec des propriétés séparées pour stocker serveurs et stations de travail
 Foreach ($device in $devices) {
     $currentOrg = $organizations | Where-Object {$_.id -eq $device.organizationId}
     if ($device.nodeClass.EndsWith("_SERVER")) {
@@ -177,7 +177,7 @@ Foreach ($device in $devices) {
     }
 }
 
-# Create and display a summary report of organizations and their device counts broken down by servers and workstations, plus total devices
+# Créer et afficher un rapport récapitulatif des organisations et leurs nombres d'appareils ventilés par serveurs et stations de travail, plus le total des appareils
 $reportSummary = Foreach ($organization in $organizations) {
     [PSCustomObject]@{
         Name = $organization.Name
@@ -187,6 +187,6 @@ $reportSummary = Foreach ($organization in $organizations) {
     }
 }
 
-# Display the summary report in a table format
+# Afficher le rapport récapitulatif en format tableau
 $reportSummary | Format-Table | Out-String
 

@@ -1,8 +1,8 @@
 <#
 
-This is provided as an educational example of how to interact with the NinjaAPI.
-Any scripts should be evaluated and tested in a controlled setting before being utilized in production.
-As this script is an educational example, further improvements and enhancement may be necessary to handle larger datasets.
+Ceci est fourni comme exemple éducatif de comment interagir avec l'API Ninja.
+Tout script doit être évalué et testé dans un environnement contrôlé avant d'être utilisé en production.
+Comme ce script est un exemple éducatif, des améliorations supplémentaires peuvent être nécessaires pour gérer des ensembles de données plus importants.
 
 #>
 
@@ -10,14 +10,14 @@ $NinjaOneInstance     = "app.ninjarmm.com"
 $NinjaOneClientId     = "-"
 $NinjaOneClientSecret = "-"
 
-# Get the current date
+# Obtenir la date actuelle
 $today = Get-Date -Format "HHmmss"
-# define base folder
+# définir le dossier de base
 $basefolder = "C:\Users\JeffHunter\NinjaReports\"
-# define file paths
+# définir les chemins de fichiers
 $patchinginforeport = $basefolder + "monthlypatchinginfo" + $today + "report.csv"
 
-# API authentication details
+# Détails d'authentification API
 $body = @{
     grant_type = "client_credentials"
     client_id = $NinjaOneClientId
@@ -37,7 +37,7 @@ catch {
     Write-Error "Failed to connect to NinjaOne API. Error: $_"
     exit
 }
-# Check if we successfully obtained an access token
+# Vérifier si nous avons obtenu un jeton d'accès avec succès
 if (-not $access_token) {
     Write-Host "Failed to obtain access token. Please check your client ID and client secret."
     exit
@@ -47,10 +47,10 @@ $headers = New-Object "System.Collections.Generic.Dictionary[[String],[String]]"
 $headers.Add("accept", 'application/json')
 $headers.Add("Authorization", "Bearer $access_token")
 
-# Initialize the date (ensure $date is defined)
+# Initialiser la date (s'assurer que $date est définie)
 $date = Get-Date
 
-# Calculate the first day of the previous month using explicit checks
+# Calculer le premier jour du mois précédent en utilisant des vérifications explicites
 if ($date.Month -eq 1) {
     $prevMonth = 12
     $year = $date.Year - 1
@@ -59,28 +59,28 @@ if ($date.Month -eq 1) {
     $year = $date.Year
 }
 
-# Create a DateTime object for the first day of the previous month
+# Créer un objet DateTime pour le premier jour du mois précédent
 $firstDayOfPreviousMonth = Get-Date -Year $year -Month $prevMonth -Day 1
 
-# Calculate the last day of the previous month
+# Calculer le dernier jour du mois précédent
 $lastDayOfPreviousMonth = $firstDayOfPreviousMonth.AddMonths(1).AddDays(-1)
 
-# Format dates as strings in the format 'yyyyMMdd'
+# Formater les dates en chaînes au format 'yyyyMMdd'
 $firstDayString = $firstDayOfPreviousMonth.ToString('yyyyMMdd')
 $lastDayString = $lastDayOfPreviousMonth.ToString('yyyyMMdd')
 
-# Output the results
+# Afficher les résultats
 Write-Host "First day of previous month: $firstDayString"
 Write-Host "Last day of previous month: $lastDayString"
 
-# define ninja urls
+# définir les urls ninja
 $devices_url = "https://$NinjaOneInstance/v2/devices?df=class%20in%20(WINDOWS_WORKSTATION,%20WINDOWS_SERVER)"
 $organizations_url = "https://$NinjaOneInstance/v2/organizations"
 $activities_url = "https://$NinjaOneInstance/api/v2/activities?df=class%20in%20(WINDOWS_WORKSTATION,%20WINDOWS_SERVER)&class=DEVICE&type=PATCH_MANAGEMENT&status=in%20(PATCH_MANAGEMENT_APPLY_PATCH_COMPLETED,%20PATCH_MANAGEMENT_SCAN_COMPLETED,%20PATCH_MANAGEMENT_FAILURE)&after=" + $firstDayString + "&before=" + $lastDayString + "&pageSize=1000"
 $patchreport_url = "https://$NinjaOneInstance/api/v2/queries/os-patch-installs?df=class%20in%20(WINDOWS_WORKSTATION,%20WINDOWS_SERVER)&status=Installed&installedAfter=" + $firstDayString + "&installedBefore=" + $lastDayString
 $failedpatch_url = "https://$NinjaOneInstance/api/v2/queries/os-patch-installs?df=class%20in%20(WINDOWS_WORKSTATION,%20WINDOWS_SERVER)&status=Failed"
 
-# call ninja urls
+# appeler les urls ninja
 try {
     $devices = Invoke-RestMethod -Uri $devices_url -Method GET -Headers $headers
     $request = Invoke-RestMethod -Uri $activities_url -Method GET -Headers $headers -Verbose
@@ -96,7 +96,7 @@ $userActivities = $request.activities
 $activitiesRemaining = $true
 $olderThan = $userActivities[-1].id
 
-# Loop while there are still activities available from the API response.
+# Boucler tant qu'il y a encore des activités disponibles dans la réponse API.
 while($activitiesRemaining -eq $true) {
     $activities_url = "https://$NinjaOneInstance/api/v2/activities?df=class%20in%20(WINDOWS_WORKSTATION,%20WINDOWS_SERVER)&class=DEVICE&type=PATCH_MANAGEMENT&status=in%20(PATCH_MANAGEMENT_APPLY_PATCH_COMPLETED,%20PATCH_MANAGEMENT_SCAN_COMPLETED,%20PATCH_MANAGEMENT_FAILURE)&after=" + $firstDayString + "&before=" + $lastDayString + "&olderThan=" + $olderThan + "&pageSize=1000"
     $response = Invoke-RestMethod -Uri $activities_url -Method GET -Headers $headers
@@ -110,7 +110,7 @@ while($activitiesRemaining -eq $true) {
 }
 
 
-# Filter user activities
+# Filtrer les activités utilisateur
 $patchScans = @()
 $patchScanFailures = @()
 $patchApplicationCycles = @()
@@ -132,13 +132,13 @@ foreach ($activity in $userActivities) {
     }
 }
 
-# Index devices by ID for faster lookup
+# Indexer les appareils par ID pour une recherche plus rapide
 $deviceIndex = @{}
 foreach ($device in $devices) {
     $deviceIndex[$device.id] = $device
 }
 
-# Initialize organization objects with PatchFailures property
+# Initialiser les objets organisation avec la propriété PatchFailures
 foreach ($organization in $organizations) {
     Add-Member -InputObject $organization -NotePropertyName "PatchScans" -NotePropertyValue @() -Force
     Add-Member -InputObject $organization -NotePropertyName "PatchFailures" -NotePropertyValue @() -Force
@@ -148,7 +148,7 @@ foreach ($organization in $organizations) {
 
 }
 
-# Assign devices to organizations
+# Assigner les appareils aux organisations
 foreach ($device in $devices) {
     $currentOrg = $organizations | Where-Object { $_.id -eq $device.organizationId }
     if ($device.nodeClass.EndsWith("_SERVER")) {
@@ -158,7 +158,7 @@ foreach ($device in $devices) {
     }
 }
 
-# Process patch scans
+# Traiter les analyses de correctifs
 foreach ($patchScan in $patchScans) {
     $device = $deviceIndex[$patchScan.deviceId]
     $patchScan | Add-Member -NotePropertyName "DeviceName" -NotePropertyValue $device.systemName -Force
@@ -167,7 +167,7 @@ foreach ($patchScan in $patchScans) {
     $organization.PatchScans += $patchScan
 }
 
-# Process patch installations
+# Traiter les installations de correctifs
 foreach ($patchinstall in $patchinstalls) {
     $device = $deviceIndex[$patchinstall.deviceId]
     $patchinstall | Add-Member -NotePropertyName "DeviceName" -NotePropertyValue $device.systemName -Force
@@ -176,7 +176,7 @@ foreach ($patchinstall in $patchinstalls) {
     $organization.PatchInstalls += $patchinstall
 }
 
-# Process patch installation failures
+# Traiter les échecs d'installation de correctifs
 foreach ($patchfailure in $patchfailures) {
     $device = $deviceIndex[$patchfailure.deviceId]
     $patchfailure | Add-Member -NotePropertyName "DeviceName" -NotePropertyValue $device.systemName -Force
@@ -186,7 +186,7 @@ foreach ($patchfailure in $patchfailures) {
 }
 
 
-# Generate results
+# Générer les résultats
 $results = foreach ($organization in $organizations) {
     [PSCustomObject]@{
         Name = $organization.Name
@@ -199,7 +199,7 @@ $results = foreach ($organization in $organizations) {
     }
 }
 
-# Export results
+# Exporter les résultats
 Write-Output $results | Format-Table
 $results | Export-CSV -NoTypeInformation -Path $patchinginforeport
 

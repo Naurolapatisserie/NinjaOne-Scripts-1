@@ -1,29 +1,29 @@
-# Script Documentation: NinjaOne Tag Presence Evaluation
+# Documentation du Script : Évaluation de Présence de Tags NinjaOne
 
-This script checks if specified tags are present on the current device using the NinjaOne API. It supports two evaluation modes: `ANY` and `ALL`.
+Ce script vérifie si les tags spécifiés sont présents sur l'appareil actuel en utilisant l'API NinjaOne. Il prend en charge deux modes d'évaluation : `ANY` et `ALL`.
 
 ---
 
-## 📋 Script Variables Overview
+## 📋 Aperçu des Variables de Script
 
-| Variable          | Used For                             | Type     | Notes                                                                 |
+| Variable          | Utilisée Pour                             | Type     | Notes                                                                 |
 |-------------------|--------------------------------------|----------|-----------------------------------------------------------------------|
-| `Tags To Search` | Tags to look for                     | TEXT     | Required. Accepts a single tag or a comma-separated list of tags      |
-| `Mode`           | Matching behavior                    | DROPDOWN | Optional. Values: `ANY` or `ALL` (case-insensitive). Defaults to `ANY` if omitted |
+| `Tags To Search` | Tags à rechercher                     | TEXTE     | Requis. Accepte un seul tag ou une liste de tags séparés par des virgules      |
+| `Mode`           | Comportement de correspondance                    | LISTE DÉROULANTE | Optionnel. Valeurs : `ANY` ou `ALL` (insensible à la casse). Par défaut `ANY` si omis |
 
 ---
 
-## 🔎 Tag Matching Logic
+## 🔎 Logique de Correspondance des Tags
 
 ### `Tags To Search`
-- Accepts a comma-separated list of tags to evaluate (e.g., `Critical,Production,VIP`)
-- Whitespace is trimmed from each tag
-- Tags are evaluated against the current device’s assigned tags (via `Get-NinjaTag`)
+- Accepte une liste de tags séparés par des virgules à évaluer (ex. `Critical,Production,VIP`)
+- Les espaces sont supprimés de chaque tag
+- Les tags sont évalués par rapport aux tags assignés de l'appareil actuel (via `Get-NinjaTag`)
 
 ### `Mode`
-- Determines how the tag match is evaluated:
-  - **`ANY`**: Script exits successfully if **any** of the specified tags are present
-  - **`ALL`**: Script exits successfully only if **all** specified tags are present
-- Case-insensitive comparison is applied
+- Détermine comment la correspondance de tag est évaluée :
+  - **`ANY`** : Le script se termine avec succès si **n'importe lequel** des tags spécifiés est présent
+  - **`ALL`** : Le script se termine avec succès uniquement si **tous** les tags spécifiés sont présents
+- Une comparaison insensible à la casse est appliquée
 
 ---

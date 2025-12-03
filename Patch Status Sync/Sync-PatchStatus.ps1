@@ -1,4 +1,4 @@
-# Check for required PowerShell version (7+)
+# Vérifier la version PowerShell requise (7+)
 if (!($PSVersionTable.PSVersion.Major -ge 7)) {
     try {
         if (!(Test-Path "$env:SystemDrive\Program Files\PowerShell\7")) {
@@ -6,10 +6,10 @@ if (!($PSVersionTable.PSVersion.Major -ge 7)) {
             exit 1
         }
 
-        # Refresh PATH
+        # Rafraîchir le PATH
         $env:Path = [System.Environment]::GetEnvironmentVariable('Path', 'Machine') + ';' + [System.Environment]::GetEnvironmentVariable('Path', 'User')
         
-        # Restart script in PowerShell 7
+        # Redémarrer le script dans PowerShell 7
         pwsh -File "`"$PSCommandPath`"" @PSBoundParameters
         
     }
@@ -20,7 +20,7 @@ if (!($PSVersionTable.PSVersion.Major -ge 7)) {
     finally { exit $LASTEXITCODE }
 }
 
-# Install or update the NinjaOneDocs module or create your own fork here https://github.com/lwhitelock/NinjaOneDocs
+# Installer ou mettre à jour le module NinjaOneDocs ou créer votre propre fork ici https://github.com/lwhitelock/NinjaOneDocs
 try {
     $moduleName = "NinjaOneDocs"
     if (-not (Get-Module -ListAvailable -Name $moduleName)) {
@@ -33,7 +33,7 @@ catch {
     exit
 }
 
-# Your NinjaRMM credentials - these should be stored in secure NinjaOne custom fields
+# Vos identifiants NinjaRMM - ceux-ci doivent être stockés dans des champs personnalisés NinjaOne sécurisés
 $NinjaOneInstance = Ninja-Property-Get ninjaoneInstance
 $NinjaOneClientId = Ninja-Property-Get ninjaoneClientId
 $NinjaOneClientSecret = Ninja-Property-Get ninjaoneClientSecret
@@ -43,7 +43,7 @@ if (!$ninjaoneInstance -and !$NinjaOneClientId -and !$NinjaOneClientSecret) {
     exit 1
 }
 
-# Connect to NinjaOne using the Connect-NinjaOne function
+# Se connecter à NinjaOne en utilisant la fonction Connect-NinjaOne
 try {
     Connect-NinjaOne -NinjaOneInstance $NinjaOneInstance -NinjaOneClientID $NinjaOneClientId -NinjaOneClientSecret $NinjaOneClientSecret
 }
@@ -67,14 +67,14 @@ function Compare-And-UpdateCustomFields {
         return
     }
 
-    # Compare current value with new value
+    # Comparer la valeur actuelle avec la nouvelle valeur
     if ($currentValue -ne $newValue) {
         Write-Host "$(Get-Date) - Updating custom field '$fieldName' for device ID $deviceId"
         $request_body = @{
             $fieldName = $newValue
         } | ConvertTo-Json
 
-        # Perform the update
+        # Effectuer la mise à jour
         try {
             Invoke-NinjaOneRequest -Method PATCH -Path "device/$deviceId/custom-fields" -Body $request_body
             Write-Host "Successfully updated '$fieldName' for device ID $deviceId"
@@ -90,7 +90,7 @@ $pendingCF = "pendingPatches"
 $approvedCF = "approvedPatches"
 $failedCF = "failedPatches"
 
-# Fetch devices and organizations using module functions
+# Récupérer les appareils et organisations en utilisant les fonctions du module
 try {
     $devices = Invoke-NinjaOneRequest -Method GET -Path 'devices-detailed' -QueryParams "df=class%20in%20(WINDOWS_WORKSTATION,%20WINDOWS_SERVER)"
     $organizations = Invoke-NinjaOneRequest -Method GET -Path 'organizations'
@@ -101,95 +101,95 @@ catch {
     exit
 }
 
-# Define query parameters for patch installations
+# Définir les paramètres de requête pour les installations de correctifs
 $queryParams = @{
     df              = 'class in (WINDOWS_WORKSTATION, WINDOWS_SERVER)'
     status          = 'FAILED'
 }
 
-# Format the query parameters into a string (URL encoding)
+# Formater les paramètres de requête en chaîne (encodage URL)
 $QueryParamString = ($queryParams.GetEnumerator() | ForEach-Object { 
     "$($_.Key)=$($_.Value -replace ' ', '%20')"
 }) -join '&'
 
-# Call Invoke-NinjaOneRequest using splatting
+# Appeler Invoke-NinjaOneRequest en utilisant le splatting
 $patchfailures = Invoke-NinjaOneRequest -Method GET -Path 'queries/os-patch-installs' -QueryParams $QueryParamString | Select-Object -ExpandProperty 'results'
 
-# Define query parameters for patch installations
+# Définir les paramètres de requête pour les installations de correctifs
 $queryParams = @{
     df              = 'class in (WINDOWS_WORKSTATION, WINDOWS_SERVER)'
     status          = 'MANUAL'
 }
 
-# Format the query parameters into a string (URL encoding)
+# Formater les paramètres de requête en chaîne (encodage URL)
 $QueryParamString = ($queryParams.GetEnumerator() | ForEach-Object { 
     "$($_.Key)=$($_.Value -replace ' ', '%20')"
 }) -join '&'
 
-# Call Invoke-NinjaOneRequest using splatting
+# Appeler Invoke-NinjaOneRequest en utilisant le splatting
 $pendingpatches = Invoke-NinjaOneRequest -Method GET -Path 'queries/os-patches' -QueryParams $QueryParamString | Select-Object -ExpandProperty 'results'
 
-# Define query parameters for patch installations
+# Définir les paramètres de requête pour les installations de correctifs
 $queryParams = @{
     df              = 'class in (WINDOWS_WORKSTATION, WINDOWS_SERVER)'
     status          = 'APPROVED'
 }
 
-# Format the query parameters into a string (URL encoding)
+# Formater les paramètres de requête en chaîne (encodage URL)
 $QueryParamString = ($queryParams.GetEnumerator() | ForEach-Object { 
     "$($_.Key)=$($_.Value -replace ' ', '%20')"
 }) -join '&'
 
-# Call Invoke-NinjaOneRequest using splatting
+# Appeler Invoke-NinjaOneRequest en utilisant le splatting
 $approvedpatches = Invoke-NinjaOneRequest -Method GET -Path 'queries/os-patches' -QueryParams $QueryParamString | Select-Object -ExpandProperty 'results'
 
-# Define query parameters for patch installations
+# Définir les paramètres de requête pour les installations de correctifs
 $queryParams = @{
     df              = 'class in (WINDOWS_WORKSTATION, WINDOWS_SERVER)'
     fields = 'pendingPatches'
 }
 
-# Format the query parameters into a string (URL encoding)
+# Formater les paramètres de requête en chaîne (encodage URL)
 $QueryParamString = ($queryParams.GetEnumerator() | ForEach-Object { 
     "$($_.Key)=$($_.Value -replace ' ', '%20')"
 }) -join '&'
 
-# Call Invoke-NinjaOneRequest using splatting
+# Appeler Invoke-NinjaOneRequest en utilisant le splatting
 $pendingcustomfields = Invoke-NinjaOneRequest -Method GET -Path 'queries/custom-fields-detailed' -QueryParams $QueryParamString -Paginate | Select-Object -ExpandProperty 'results'
 
-# Define query parameters for patch installations
+# Définir les paramètres de requête pour les installations de correctifs
 $queryParams = @{
     df              = 'class in (WINDOWS_WORKSTATION, WINDOWS_SERVER)'
     fields = 'failedPatches'
 }
 
-# Format the query parameters into a string (URL encoding)
+# Formater les paramètres de requête en chaîne (encodage URL)
 $QueryParamString = ($queryParams.GetEnumerator() | ForEach-Object { 
     "$($_.Key)=$($_.Value -replace ' ', '%20')"
 }) -join '&'
 
-# Call Invoke-NinjaOneRequest using splatting
+# Appeler Invoke-NinjaOneRequest en utilisant le splatting
 $failedcustomfields = Invoke-NinjaOneRequest -Method GET -Path 'queries/custom-fields-detailed' -QueryParams $QueryParamString -Paginate | Select-Object -ExpandProperty 'results'
 
-# Define query parameters for patch installations
+# Définir les paramètres de requête pour les installations de correctifs
 $queryParams = @{
     df              = 'class in (WINDOWS_WORKSTATION, WINDOWS_SERVER)'
     fields = 'approvedPatches'
 }
 
-# Format the query parameters into a string (URL encoding)
+# Formater les paramètres de requête en chaîne (encodage URL)
 $QueryParamString = ($queryParams.GetEnumerator() | ForEach-Object { 
     "$($_.Key)=$($_.Value -replace ' ', '%20')"
 }) -join '&'
 
-# Call Invoke-NinjaOneRequest using splatting
+# Appeler Invoke-NinjaOneRequest en utilisant le splatting
 $approvedcustomfields = Invoke-NinjaOneRequest -Method GET -Path 'queries/custom-fields-detailed' -QueryParams $QueryParamString -Paginate | Select-Object -ExpandProperty 'results'
 
-# Process pending patches
+# Traiter les correctifs en attente
 $groupedpending = $pendingpatches | Group-Object -Property deviceId
-# Process pending patches
+# Traiter les correctifs en attente
 $groupedfailed = $patchfailures | Group-Object -Property deviceId
-# Process pending patches
+# Traiter les correctifs en attente
 $groupedapproved = $approvedpatches | Group-Object -Property deviceId
 
 
@@ -197,7 +197,7 @@ foreach ($group in $groupedpending) {
     $deviceId = $group.Name
     $updatesForDevice = $group.Group
 
-    # Convert updates to JSON string for comparison
+    # Convertir les mises à jour en chaîne JSON pour comparaison
     $newValue = ($updatesForDevice | ForEach-Object { $_.name }) -join ","
     Compare-And-UpdateCustomFields -instance $NinjaOneInstance -deviceId $deviceId -fieldName "pendingPatches" -newValue $newValue
 }
@@ -206,7 +206,7 @@ foreach ($group in $groupedfailed) {
     $deviceId = $group.Name
     $updatesForDevice = $group.Group
 
-    # Convert updates to JSON string for comparison
+    # Convertir les mises à jour en chaîne JSON pour comparaison
     $newValue = ($updatesForDevice | ForEach-Object { $_.name }) -join ","
     Compare-And-UpdateCustomFields -instance $NinjaOneInstance -deviceId $deviceId -fieldName "failedPatches" -newValue $newValue
 }
@@ -215,13 +215,13 @@ foreach ($group in $groupedapproved) {
     $deviceId = $group.Name
     $updatesForDevice = $group.Group
 
-    # Convert updates to JSON string for comparison
+    # Convertir les mises à jour en chaîne JSON pour comparaison
     $newValue = ($updatesForDevice | ForEach-Object { $_.name }) -join ","
     Compare-And-UpdateCustomFields -instance $NinjaOneInstance -deviceId $deviceId -fieldName "approvedPatches" -newValue $newValue
 }
 
 
-# Create hashtables for quick membership checks
+# Créer des tables de hachage pour des vérifications d'appartenance rapides
 $PendingDeviceIds   = @{}
 $FailedDeviceIds    = @{}
 $ApprovedDeviceIds  = @{}
@@ -230,38 +230,38 @@ $groupedpending | ForEach-Object   { $PendingDeviceIds[[string]$_.Name]   = $tru
 $groupedfailed | ForEach-Object    { $FailedDeviceIds[[string]$_.Name]    = $true }
 $groupedapproved | ForEach-Object  { $ApprovedDeviceIds[[string]$_.Name]  = $true }
 
-# Check for stale pendingPatches
+# Vérifier les correctifs en attente obsolètes
 foreach ($cf in $pendingcustomfields) {
-    # Convert deviceId to string to match the keys in the hashtable
+    # Convertir deviceId en chaîne pour correspondre aux clés dans la table de hachage
     $deviceId = [string]$cf.deviceId
     $currentPending = $cf.fields.value
 
-    # If there's data in pendingPatches but the device isn't in the current $groupedpending list, it's stale
+    # S'il y a des données dans pendingPatches mais que l'appareil n'est pas dans la liste $groupedpending actuelle, c'est obsolète
     if ([string]::IsNullOrWhiteSpace($currentPending) -eq $false -and -not $PendingDeviceIds.ContainsKey($deviceId)) {
         Write-Host "$(Get-Date) - Stale pendingPatches found for device $deviceId. Clearing field."
         Compare-And-UpdateCustomFields -deviceId $deviceId -fieldName "pendingPatches" -newValue ""
     }
 }
 
-# Check for stale failedPatches
+# Vérifier les correctifs échoués obsolètes
 foreach ($cf in $failedcustomfields) {
-    # Convert deviceId to string to match the keys in the hashtable
+    # Convertir deviceId en chaîne pour correspondre aux clés dans la table de hachage
     $deviceId = [string]$cf.deviceId
     $currentFailed = $cf.failedPatches
 
-    # If there's data in failedPatches but the device isn't in the current $groupedfailed list, it's stale
+    # S'il y a des données dans failedPatches mais que l'appareil n'est pas dans la liste $groupedfailed actuelle, c'est obsolète
     if ([string]::IsNullOrWhiteSpace($currentFailed) -eq $false -and -not $FailedDeviceIds.ContainsKey($deviceId)) {
         Write-Host "$(Get-Date) - Stale failedPatches found for device $deviceId. Clearing field."
         Compare-And-UpdateCustomFields -deviceId $deviceId -fieldName "failedPatches" -newValue ""
     }
 }
 
-# Check for stale approvedPatches
+# Vérifier les correctifs approuvés obsolètes
 foreach ($cf in $approvedcustomfields) {
     $deviceId = [string]$cf.deviceId
     $currentApproved = $cf.approvedPatches
 
-    # If there's data in approvedPatches but the device isn't in the current $groupedapproved list, it's stale
+    # S'il y a des données dans approvedPatches mais que l'appareil n'est pas dans la liste $groupedapproved actuelle, c'est obsolète
     if ([string]::IsNullOrWhiteSpace($currentApproved) -eq $false -and -not $ApprovedDeviceIds.ContainsKey($deviceId)) {
         Write-Host "$(Get-Date) - Stale approvedPatches found for device $deviceId. Clearing field."
         Compare-And-UpdateCustomFields -deviceId $deviceId -fieldName "approvedPatches" -newValue ""

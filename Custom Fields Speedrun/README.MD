@@ -1,34 +1,34 @@
-# NinjaOne API Device Import and Custom Field Update Script
+# Script d'Importation d'Appareils et de Mise à Jour de Champs Personnalisés via API NinjaOne
 
-This script demonstrates how to interact with the NinjaOne API, import device data from a CSV, match it with devices from NinjaOne, and update custom fields dynamically based on CSV headers.  
-It includes enhanced error handling, logging, and dynamic request body generation. This has only been tested with text, multiline, and checkbox types of custom fields. Only field types that accept a string value are likely to work, anything involving attachments or WYSIWYG fields is not likely to function.
+Ce script démontre comment interagir avec l'API NinjaOne, importer des données d'appareils depuis un CSV, les faire correspondre avec les appareils de NinjaOne, et mettre à jour les champs personnalisés dynamiquement basé sur les en-têtes CSV.
+Il inclut une gestion d'erreurs améliorée, la journalisation et la génération dynamique du corps de requête. Ceci n'a été testé qu'avec les types de champs personnalisés texte, multi-lignes et case à cocher. Seuls les types de champs qui acceptent une valeur chaîne sont susceptibles de fonctionner, tout ce qui implique des pièces jointes ou des champs WYSIWYG ne fonctionnera probablement pas.
 
-You can see this script in action here: https://www.youtube.com/watch?v=QvDygAJrlq0 (around 31:40)
+Vous pouvez voir ce script en action ici : https://www.youtube.com/watch?v=QvDygAJrlq0 (vers 31:40)
 
-Example CSV used to import data during webinar: https://github.com/jeffhunterninja/NinjaOne-Scripts/blob/main/Custom%20Fields%20Speedrun/datatoimport.csv
+Exemple de CSV utilisé pour importer des données pendant le webinaire : https://github.com/jeffhunterninja/NinjaOne-Scripts/blob/main/Custom%20Fields%20Speedrun/datatoimport.csv
 
-## Parameters
+## Paramètres
 
 ### `$OverwriteEmptyValues`
-- **Description**: Determines if empty CSV values are included as `$null` (overwriting existing data) or excluded from the update payload.  
-- **Default Value**: `$false`
+- **Description** : Détermine si les valeurs CSV vides sont incluses comme `$null` (écrasant les données existantes) ou exclues de la charge utile de mise à jour.
+- **Valeur par Défaut** : `$false`
 
-## Prerequisites
+## Prérequis
 
-Before running this script, ensure the following:
+Avant d'exécuter ce script, assurez-vous de ce qui suit :
 
-1. The CSV file (`csvexample.csv`) must have at least the following columns:
+1. Le fichier CSV (`csvexample.csv`) doit avoir au moins les colonnes suivantes :
    - `Id`
    - `Name`
-2. Additional columns (e.g., `assetOwner`, `location`, etc.) will be used as custom fields.
-3. Replace the following placeholders in the script with your actual values:
+2. Les colonnes supplémentaires (ex. `assetOwner`, `location`, etc.) seront utilisées comme champs personnalisés.
+3. Remplacez les espaces réservés suivants dans le script par vos valeurs réelles :
    - `$NinjaOneClientId`
    - `$NinjaOneClientSecret`
-   - `$csvPath` (Path to the CSV file)
+   - `$csvPath` (Chemin vers le fichier CSV)
 
-## Usage
+## Utilisation
 
-Run the script in PowerShell with the required parameters:
+Exécutez le script dans PowerShell avec les paramètres requis :
 
 ```powershell
 .\ScriptName.ps1 -OverwriteEmptyValues $true
