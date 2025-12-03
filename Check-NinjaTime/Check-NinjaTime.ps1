@@ -1,59 +1,59 @@
 <#
 .SYNOPSIS
-    Multi-mode scheduling script with recurring window mode, configurable grace period,
-    and support for environment variable defaults.
+    Script de planification multi-mode avec mode fenêtre récurrente, période de grâce configurable,
+    et prise en charge des valeurs par défaut via variables d'environnement.
 
 .DESCRIPTION
-    This script supports several scheduling modes:
-      - Once: A one‑time event based on a full date/time.
-      - Daily: Runs every day at the time specified in TargetTime (only the time-of-day is used).
-      - Weekly: Runs on one or more specified days of the week at the time specified in TargetTime.
-      - Monthly: Runs on a specific numbered day of the month at the time specified in TargetTime.
-      - Window: Executes if the current time is within (or about to reach) a recurring window.
-               For Window mode you can specify a recurrence pattern:
-                   * Daily (default): The window recurs every day.
-                   * Weekly: The window recurs on specified day(s) of the week.
-               In recurring mode the date portion is ignored and only the time-of-day is used.
+    Ce script prend en charge plusieurs modes de planification :
+      - Once : Un événement unique basé sur une date/heure complète.
+      - Daily : S'exécute chaque jour à l'heure spécifiée dans TargetTime (seule l'heure est utilisée).
+      - Weekly : S'exécute un ou plusieurs jours de la semaine à l'heure spécifiée dans TargetTime.
+      - Monthly : S'exécute un jour numéroté spécifique du mois à l'heure spécifiée dans TargetTime.
+      - Window : S'exécute si l'heure actuelle est dans (ou sur le point d'atteindre) une fenêtre récurrente.
+               Pour le mode Window, vous pouvez spécifier un modèle de récurrence :
+                   * Daily (par défaut) : La fenêtre se répète chaque jour.
+                   * Weekly : La fenêtre se répète le(s) jour(s) spécifié(s) de la semaine.
+               En mode récurrent, la partie date est ignorée et seule l'heure est utilisée.
                
-    A configurable grace period ($TimeWindowMinutes) determines whether the script will sleep until the target time
-    (or window start) if it is within that many minutes; otherwise, the script exits, allowing recurring execution.
+    Une période de grâce configurable ($TimeWindowMinutes) détermine si le script attendra jusqu'à l'heure cible
+    (ou le début de la fenêtre) si elle est dans ce nombre de minutes ; sinon, le script se termine, permettant une exécution récurrente.
 
 .PARAMETER Mode
-    The scheduling mode. Allowed values: Once, Daily, Weekly, Monthly, Window.
-    (Defaults to environment variable 'mode'.)
+    Le mode de planification. Valeurs autorisées : Once, Daily, Weekly, Monthly, Window.
+    (Par défaut : variable d'environnement 'mode'.)
 
 .PARAMETER TargetTime
-    (For non-Window modes) Full date/time or time-of-day.
-    (Defaults to environment variable 'targetTime'.)
+    (Pour les modes non-Window) Date/heure complète ou heure du jour.
+    (Par défaut : variable d'environnement 'targetTime'.)
 
 .PARAMETER DayOfWeek
-    (For Weekly mode in non-window modes) One or more days of the week (e.g. "Monday", "Friday").
-    (Defaults to environment variable 'weeklyDayOfWeek'.)
+    (Pour le mode Weekly dans les modes non-window) Un ou plusieurs jours de la semaine (ex. "Monday", "Friday").
+    (Par défaut : variable d'environnement 'weeklyDayOfWeek'.)
 
 .PARAMETER DayOfMonth
-    (For Monthly mode in non-window modes) The numeric day of the month (1–31).
-    (Defaults to environment variable 'monthlyDayOfMonth'.)
+    (Pour le mode Monthly dans les modes non-window) Le jour numérique du mois (1–31).
+    (Par défaut : variable d'environnement 'monthlyDayOfMonth'.)
 
 .PARAMETER WindowStart
-    (For Window mode) The window’s start time.
-    (Defaults to environment variable 'windowStart'.)
-    Only the time portion will be used (e.g. "13:00").
+    (Pour le mode Window) L'heure de début de la fenêtre.
+    (Par défaut : variable d'environnement 'windowStart'.)
+    Seule la partie heure sera utilisée (ex. "13:00").
 
 .PARAMETER WindowEnd
-    (For Window mode) The window’s end time.
-    (Defaults to environment variable 'windowEnd'.)
-    Only the time portion will be used (e.g. "23:00").
+    (Pour le mode Window) L'heure de fin de la fenêtre.
+    (Par défaut : variable d'environnement 'windowEnd'.)
+    Seule la partie heure sera utilisée (ex. "23:00").
 
 .PARAMETER WindowRecurrence
-    (For Window mode) Specifies whether the window recurs "Daily" or "Weekly".
-    (Defaults to environment variable 'windowRecurrence'; if not provided, defaults to "Daily".)
+    (Pour le mode Window) Spécifie si la fenêtre se répète "Daily" ou "Weekly".
+    (Par défaut : variable d'environnement 'windowRecurrence' ; si non fourni, "Daily" par défaut.)
 
 .PARAMETER WindowDayOfWeek
-    (For Window mode with Weekly recurrence) One or more days of the week on which the window recurs.
-    (Defaults to environment variable 'windowDayOfWeek'.)
+    (Pour le mode Window avec récurrence Weekly) Un ou plusieurs jours de la semaine où la fenêtre se répète.
+    (Par défaut : variable d'environnement 'windowDayOfWeek'.)
 
 .NOTES
-    Replace the "# PLACE YOUR ACTION CODE HERE" sections with your actual commands.
+    Remplacez les sections "# PLACEZ VOTRE CODE D'ACTION ICI" par vos commandes réelles.
 #>
 
 param(
@@ -67,7 +67,7 @@ param(
     [string[]]$WindowDayOfWeek
 )
 
-# Assign from environment variables if not passed.
+# Assigner depuis les variables d'environnement si non passées.
 if (-not $Mode)         { $Mode = $env:mode }
 if (-not $TargetTime)     { $TargetTime = $env:targetTime }
 if (-not $DayOfWeek)      { $DayOfWeek = $env:weeklyDayOfWeek }
@@ -77,7 +77,7 @@ if (-not $WindowEnd)      { $WindowEnd = $env:windowEnd }
 if (-not $WindowRecurrence) { $WindowRecurrence = $env:windowRecurrence }
 if (-not $WindowDayOfWeek){ $WindowDayOfWeek = $env:windowDayOfWeek }
 
-# Debug output to verify incoming values.
+# Sortie de débogage pour vérifier les valeurs entrantes.
 Write-Output "Mode: '$Mode'"
 Write-Output "TargetTime: '$TargetTime'"
 Write-Output "DayOfWeek: '$($DayOfWeek -join ', ')'"
@@ -87,10 +87,10 @@ Write-Output "WindowEnd (raw): '$WindowEnd'"
 Write-Output "WindowRecurrence: '$WindowRecurrence'"
 Write-Output "WindowDayOfWeek: '$($WindowDayOfWeek -join ', ')'"
 
-# Configurable grace period (in minutes) for waiting until target time/window.
+# Période de grâce configurable (en minutes) pour attendre jusqu'à l'heure cible/fenêtre.
 $TimeWindowMinutes = 5
 
-# Convert input strings to DateTime or TimeSpan objects as needed.
+# Convertir les chaînes d'entrée en objets DateTime ou TimeSpan selon les besoins.
 if ($Mode -ne "Window") {
     if ([string]::IsNullOrEmpty($TargetTime)) {
         Write-Error "TargetTime parameter is required for mode $Mode."
@@ -108,10 +108,10 @@ if ($Mode -ne "Window") {
         exit 2
     }
     try {
-        # Parse the ISO8601 string and extract the local time portion in "HH:mm" format.
+        # Analyser la chaîne ISO8601 et extraire la partie heure locale au format "HH:mm".
         $wsString = ([datetimeoffset]::Parse($WindowStart.Trim())).LocalDateTime.ToString("HH:mm")
         $weString = ([datetimeoffset]::Parse($WindowEnd.Trim())).LocalDateTime.ToString("HH:mm")
-        # Convert the time strings to TimeSpan objects.
+        # Convertir les chaînes d'heure en objets TimeSpan.
         $WindowStartTS = [TimeSpan]::Parse($wsString)
         $WindowEndTS   = [TimeSpan]::Parse($weString)
         Write-Output "Parsed WindowStart TimeSpan: $WindowStartTS, WindowEnd TimeSpan: $WindowEndTS"
@@ -197,7 +197,7 @@ $now = Get-Date
 switch ($Mode) {
     "Window" {
         if ($WindowRecurrence -eq "Daily") {
-            # Use the TimeSpans we extracted.
+            # Utiliser les TimeSpans que nous avons extraits.
             $todayWindowStart = $now.Date + $WindowStartTS
             $todayWindowEnd   = $now.Date + $WindowEndTS
             if ($WindowEndTS -lt $WindowStartTS) {
@@ -217,7 +217,7 @@ switch ($Mode) {
                 exit 2
             }
             Write-Output "Current time is within today's window. Executing action..."
-            # PLACE YOUR ACTION CODE HERE for recurring Daily window mode.
+            # PLACEZ VOTRE CODE D'ACTION ICI pour le mode fenêtre récurrente quotidienne.
             exit 1
             Write-Output "Action executed in Daily Window mode."
         }
@@ -258,7 +258,7 @@ switch ($Mode) {
                 exit 2
             }
             Write-Output "Current time is within the weekly window. Executing action..."
-            # PLACE YOUR ACTION CODE HERE for recurring Weekly window mode.
+            # PLACEZ VOTRE CODE D'ACTION ICI pour le mode fenêtre récurrente hebdomadaire.
             exit 1
             Write-Output "Action executed in Weekly Window mode."
         }
@@ -283,7 +283,7 @@ switch ($Mode) {
         }
         Write-Output "Scheduled time reached. Executing action..."
         exit 1
-        # PLACE YOUR ACTION CODE HERE for Once/Daily/Weekly/Monthly modes.
+        # PLACEZ VOTRE CODE D'ACTION ICI pour les modes Once/Daily/Weekly/Monthly.
         Write-Output "Action executed for mode $Mode."
     }
 }

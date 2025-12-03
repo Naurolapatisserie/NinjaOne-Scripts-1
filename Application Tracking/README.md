@@ -1,161 +1,161 @@
-# Application Tracking
+# Suivi des Applications
 
-These scripts form the basis of a framework that allows you to use **NinjaOne** to establish a whitelist of authorized applications in an **organization custom field** and compare installed applications on a device against that whitelist. You can also add per-device overrides in an optional **device custom field**. Unauthorized applications are written into a custom field for alerting/reporting purposes.
+Ces scripts constituent la base d'un framework qui vous permet d'utiliser **NinjaOne** pour établir une liste blanche d'applications autorisées dans un **champ personnalisé d'organisation** et comparer les applications installées sur un appareil avec cette liste blanche. Vous pouvez également ajouter des exceptions par appareil dans un **champ personnalisé d'appareil** optionnel. Les applications non autorisées sont écrites dans un champ personnalisé à des fins d'alerte/rapport.
 
-This may not be a feasible workflow depending on your environment. For example:
+Ce flux de travail peut ne pas être réalisable selon votre environnement. Par exemple :
 
-- If every user has admin or installation rights, the alerts will eventually reach an unsustainable volume.
-- Users used to having install rights may not react positively to having them withdrawn
-- However, if users are otherwise locked down already, this could be a useful tool to identify unexpected application installations.
+- Si chaque utilisateur a des droits d'administrateur ou d'installation, les alertes atteindront éventuellement un volume insoutenable.
+- Les utilisateurs habitués à avoir des droits d'installation peuvent ne pas réagir positivement à leur retrait
+- Cependant, si les utilisateurs sont déjà verrouillés, cela pourrait être un outil utile pour identifier les installations d'applications inattendues.
 
-**Only Windows devices are supported today**
+**Seuls les appareils Windows sont pris en charge aujourd'hui**
 
-> **Recommendation:** Use this process primarily for tracking application usage across endpoints as a **periodic report**, rather than for security/operational processes requiring immediate responses.
+> **Recommandation :** Utilisez ce processus principalement pour suivre l'utilisation des applications sur les terminaux en tant que **rapport périodique**, plutôt que pour des processus de sécurité/opérationnels nécessitant des réponses immédiates.
 
 ---
 
-## Steps
+## Étapes
 
-Before utilizing these scripts, there are some **prerequisites**:
+Avant d'utiliser ces scripts, il y a quelques **prérequis** :
 
-### 1. Set Up an API Server/Automated Documentation Server  
-Follow the instructions here:  
+### 1. Configurer un Serveur API/Serveur de Documentation Automatisée
+Suivez les instructions ici :
 [https://docs.mspp.io/ninjaone/getting-started](https://docs.mspp.io/ninjaone/getting-started)
 
 ---
 
-### 2. Custom Fields Configuration  
+### 2. Configuration des Champs Personnalisés
 
-Create the following custom fields with the specified permissions. You can rename these fields, but you must modify the scripts accordingly.
+Créez les champs personnalisés suivants avec les permissions spécifiées. Vous pouvez renommer ces champs, mais vous devez modifier les scripts en conséquence.
 
-| **Name**                   | **Display Name**             | **Permissions**                                                                 | **Scope**               | **Type**                                |
+| **Nom**                   | **Nom d'affichage**             | **Permissions**                                                                 | **Portée**               | **Type**                                |
 |----------------------------|------------------------------|---------------------------------------------------------------------------------|-------------------------|-----------------------------------------------|
-| **softwareList**           | Software List                | - Read-Only to Technicians  <br> - Read-Only to Automations <br> - Read/Write to API | Organization and Device | WYSIWYG  |
-| **deviceSoftwareList**     | Device Software List         | - Read-Only to Technicians <br> - Read-Only to Automations <br> - Read/Write to API | Device                  | WYSIWYG |
-| **unauthorizedApplications** | Unauthorized Applications   | - Read-Only to Technicians <br> - Read/Write to Automations <br> - Read-Only to API | Device                  | Multi-line |
+| **softwareList**           | Liste des logiciels                | - Lecture seule pour les techniciens  <br> - Lecture seule pour les automatisations <br> - Lecture/Écriture pour l'API | Organisation et Appareil | WYSIWYG  |
+| **deviceSoftwareList**     | Liste des logiciels de l'appareil         | - Lecture seule pour les techniciens <br> - Lecture seule pour les automatisations <br> - Lecture/Écriture pour l'API | Appareil                  | WYSIWYG |
+| **unauthorizedApplications** | Applications non autorisées   | - Lecture seule pour les techniciens <br> - Lecture/Écriture pour les automatisations <br> - Lecture seule pour l'API | Appareil                  | Multi-ligne |
 
 
 ---
 
-### 3. Import Scripts  
+### 3. Importer les Scripts
 
-Import the scripts in this repository into **NinjaOne**. Each script has script variables that need to be created within the NinjaOne script editor.
+Importez les scripts de ce dépôt dans **NinjaOne**. Chaque script a des variables de script qui doivent être créées dans l'éditeur de scripts NinjaOne.
 
 ---
 
-## Script: Check-AuthorizedApplications
+## Script : Check-AuthorizedApplications
 
-### Execution  
-Run as **script result condition**.
+### Exécution
+Exécuter en tant que **condition de résultat de script**.
 
-### Script Variables Required  
+### Variables de Script Requises
 
-Create these variables in the NinjaOne script editor:
+Créez ces variables dans l'éditeur de scripts NinjaOne :
 
-| **Name**              | **Pretty Name**                          | **Script Variable Type** |
-|-----------------------|------------------------------------------|--------------------------|
-| **matchingCriteria**  | Matching Criteria                       | Drop-Down                |
+| **Nom**              | **Nom affiché**                          | **Type de variable de script** |
+|-----------------------|------------------------------------------|--------------------------||
+| **matchingCriteria**  | Critères de correspondance                       | Liste déroulante                |
 
-This variable controls the matching mode of the script. Enter all options in the **Mode** column as options for the drop-down script variable.
+Cette variable contrôle le mode de correspondance du script. Entrez toutes les options de la colonne **Mode** comme options pour la variable de script liste déroulante.
 
-## Matching Mode
+## Mode de Correspondance
 
-| **Mode**            | **Case-Sensitive** | **Matching Behavior**                  | **Use Case**                      |
+| **Mode**            | **Sensible à la casse** | **Comportement de correspondance**                  | **Cas d'utilisation**                      |
 |----------------------|--------------------|----------------------------------------|-----------------------------------|
-| **Exact**           | Yes                | Full, identical string matches only    | When precision is critical.       |
-| **CaseInsensitive** | No                 | Matches identical strings, ignores case| When case differences exist.      |
-| **Partial**         | Yes                | Checks if authorized app is a substring| For loose or fuzzy comparisons.   |
+| **Exact**           | Oui                | Correspondances de chaînes identiques uniquement    | Quand la précision est critique.       |
+| **CaseInsensitive** | Non                 | Correspond aux chaînes identiques, ignore la casse| Quand des différences de casse existent.      |
+| **Partial**         | Oui                | Vérifie si l'app autorisée est une sous-chaîne| Pour des comparaisons souples ou floues.   |
 
 ---
 
-## Script: Update-AuthorizedApplications
+## Script : Update-AuthorizedApplications
 
-### Execution  
-Run as needed from the API Server/Automated Documentation Server to update which applications are authorized at the organization or device levels.
+### Exécution
+Exécuter selon les besoins depuis le Serveur API/Serveur de Documentation Automatisée pour mettre à jour les applications autorisées au niveau de l'organisation ou de l'appareil.
 
-### Script Variables Required  
+### Variables de Script Requises  
 
-| **Name**                                    | **Pretty Name**                                | **Script Variable Type** |
-|-------------------------------------------|--------------------------------------------|--------------------------|
-| **commaSeparatedListOfOrganizationsToUpdate** | Comma Separated List Of Organizations To Update | String/Text              |
-| **updateOrganizationsBasedOnCurrentSoftwareInventory** | Update Organizations Based On Current Software Inventory | Checkbox                  |
-| **appendToOrganizations**                   | Append To Organizations                     | String/Text              |
-| **softwareToAppend**                        | Software To Append                          | String/Text              |
-| **removeFromOrganizations**                 | Remove From Organizations                   | String/Text              |
-| **softwareToRemove**                        | Software To Remove                          | String/Text              |
-| **appendToDevices**                         | Append To Devices                           | String/Text              |
-| **deviceSoftwareToAppend**                  | Device Software To Append                   | String/Text              |
-| **removeFromDevices**                       | Remove From Devices                         | String/Text              |
-| **deviceSoftwareToRemove**                  | Device Software To Remove                   | String/Text              |
-
----
-
-### Main Functions of the Script  
-
-1. **Authorize Installed Applications:**  
-   - Authorize all applications currently installed across all organizations.  
-   - Authorize applications for selected organizations using a comma-separated list.
-   - **Using this option will overwrite data already present in the organization custom fields**
-
-2. **Append Applications to Organization(s):**  
-   - Append software to authorized applications for all or specific organizations.
-
-3. **Remove Applications from Organization(s):**  
-   - Remove software from authorized applications for all or specific organizations.
-
-4. **Per-Device Overrides:**  
-   - Append or remove software for specific devices.
+| **Nom**                                    | **Nom affiché**                                | **Type de variable de script** |
+|-------------------------------------------|--------------------------------------------|--------------------------||
+| **commaSeparatedListOfOrganizationsToUpdate** | Liste séparée par virgules des organisations à mettre à jour | Texte              |
+| **updateOrganizationsBasedOnCurrentSoftwareInventory** | Mettre à jour les organisations selon l'inventaire logiciel actuel | Case à cocher                  |
+| **appendToOrganizations**                   | Ajouter aux organisations                     | Texte              |
+| **softwareToAppend**                        | Logiciel à ajouter                          | Texte              |
+| **removeFromOrganizations**                 | Supprimer des organisations                   | Texte              |
+| **softwareToRemove**                        | Logiciel à supprimer                          | Texte              |
+| **appendToDevices**                         | Ajouter aux appareils                           | Texte              |
+| **deviceSoftwareToAppend**                  | Logiciel d'appareil à ajouter                   | Texte              |
+| **removeFromDevices**                       | Supprimer des appareils                         | Texte              |
+| **deviceSoftwareToRemove**                  | Logiciel d'appareil à supprimer                   | Texte              |
 
 ---
 
-## Script: Recover-AuthorizedApplications
+### Fonctions Principales du Script
 
-### Execution  
-Run on a **daily cadence** to back up or restore as needed.
+1. **Autoriser les Applications Installées :**
+   - Autoriser toutes les applications actuellement installées dans toutes les organisations.
+   - Autoriser les applications pour des organisations sélectionnées en utilisant une liste séparée par virgules.
+   - **L'utilisation de cette option écrasera les données déjà présentes dans les champs personnalisés de l'organisation**
 
-### Script Variables Required  
-For backups, only the **Action** variable must be entered.
-A **BackupFile** or **BackupDirectory** must be specified for restorations, and a **TargetType** must be selected.
+2. **Ajouter des Applications aux Organisation(s) :**
+   - Ajouter des logiciels aux applications autorisées pour toutes ou certaines organisations.
 
-| **Name**              | **Pretty Name**                          | **Script Variable Type** |
-|-----------------------|------------------------------------------|--------------------------|
-| **Action**            | Action                                  | Drop-Down                |
-| **BackupFile**        | Backup File                             | String/Text              |
-| **BackupDirectory**   | Backup Directory                        | String/Text              |
-| **TargetType**        | Target Type                             | Drop-Down                |
-| **RestoreTargets**    | Restore Targets                         | String/Text              |
+3. **Supprimer des Applications des Organisation(s) :**
+   - Supprimer des logiciels des applications autorisées pour toutes ou certaines organisations.
 
-> **Recommendation:** Run the backup script **daily** or **weekly**.
+4. **Exceptions par Appareil :**
+   - Ajouter ou supprimer des logiciels pour des appareils spécifiques.
 
 ---
 
-## Script: Report-UnauthorizedApplications  
+## Script : Recover-AuthorizedApplications
 
-> **Requirement:** This script utilizes the NinjaOneDocs Powershell module located here: [https://github.com/lwhitelock/NinjaOneDocs/tree/main/Public](https://github.com/lwhitelock/NinjaOneDocs/tree/main/Public).
+### Exécution
+Exécuter sur une **cadence quotidienne** pour sauvegarder ou restaurer selon les besoins.
 
-This script outputs:  
+### Variables de Script Requises
+Pour les sauvegardes, seule la variable **Action** doit être saisie.
+Un **BackupFile** ou **BackupDirectory** doit être spécifié pour les restaurations, et un **TargetType** doit être sélectionné.
 
-- A comma-separated list of unauthorized applications across the entire environment.  
-- A CSV export of unauthorized applications by device and listing each location and organization into C:\temp.
+| **Nom**              | **Nom affiché**                          | **Type de variable de script** |
+|-----------------------|------------------------------------------|--------------------------||
+| **Action**            | Action                                  | Liste déroulante                |
+| **BackupFile**        | Fichier de sauvegarde                             | Texte              |
+| **BackupDirectory**   | Répertoire de sauvegarde                        | Texte              |
+| **TargetType**        | Type de cible                             | Liste déroulante                |
+| **RestoreTargets**    | Cibles de restauration                         | Texte              |
 
-> **Note:** This depends on the "Unauthorized Applications" custom field. Offline agents may not update the field until they come back online.
+> **Recommandation :** Exécutez le script de sauvegarde **quotidiennement** ou **hebdomadairement**.
 
 ---
 
-## Caveats and Disclaimers  
+## Script : Report-UnauthorizedApplications
 
-- **User-context Installations:**  
-  NinjaOne does not track user-context installations by default.
+> **Prérequis :** Ce script utilise le module PowerShell NinjaOneDocs situé ici : [https://github.com/lwhitelock/NinjaOneDocs/tree/main/Public](https://github.com/lwhitelock/NinjaOneDocs/tree/main/Public).
 
-- **Not Zero-Trust:**  
-  This framework does not prevent privilege escalation but provides insights into unexpected installations.
+Ce script produit :
 
-- **False Positives:**  
-  Expect false positives, especially from application name changes. **Partial matching** can help reduce these but increases the risk of missed unauthorized installations.
+- Une liste séparée par virgules des applications non autorisées dans tout l'environnement.
+- Une exportation CSV des applications non autorisées par appareil avec chaque emplacement et organisation dans C:\temp.
 
-- **Response Strategy:**  
-  Responding to unauthorized applications requires time. Without adequate user controls, alerts can quickly spiral.  
+> **Note :** Cela dépend du champ personnalisé "Applications non autorisées". Les agents hors ligne peuvent ne pas mettre à jour le champ jusqu'à ce qu'ils reviennent en ligne.
 
-> **Recommendation:** Review unauthorized applications on a **weekly** or **monthly** cadence for sustainability.
+---
+
+## Mises en Garde et Avertissements
+
+- **Installations en contexte utilisateur :**
+  NinjaOne ne suit pas les installations en contexte utilisateur par défaut.
+
+- **Pas de Zero-Trust :**
+  Ce framework n'empêche pas l'élévation de privilèges mais fournit des informations sur les installations inattendues.
+
+- **Faux Positifs :**
+  Attendez-vous à des faux positifs, notamment dus aux changements de noms d'applications. La **correspondance partielle** peut aider à les réduire mais augmente le risque de manquer des installations non autorisées.
+
+- **Stratégie de Réponse :**
+  Répondre aux applications non autorisées nécessite du temps. Sans contrôles utilisateur adéquats, les alertes peuvent rapidement s'accumuler.
+
+> **Recommandation :** Examinez les applications non autorisées sur une cadence **hebdomadaire** ou **mensuelle** pour la durabilité.
 
 ---
